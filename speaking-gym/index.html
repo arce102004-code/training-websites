@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Speaking Gym</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cloud:#F5F7F6;
+    --mist:#EBEFEE;
+    --ink:#2B3440;
+    --ink-soft:#6B7580;
+    --teal:#7FA8A3;
+    --teal-dim:rgba(127,168,163,0.14);
+    --champagne:#C9A66B;
+    --champagne-dim:rgba(201,166,107,0.16);
+    --blush:#EAC9CE;
+    --blush-deep:#C98A96;
+    --blush-dim:rgba(201,138,150,0.16);
+
+    --accent: var(--teal);
+    --accent-dim: var(--teal-dim);
+    --accent-rgb: 127,168,163;
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  html,body{ min-height:100%; background:var(--cloud); }
+  body{
+    font-family:'Outfit', sans-serif; font-weight:300;
+    color:var(--ink);
+    cursor:none;
+    overflow-x:hidden;
+    position:relative; z-index:0;
+    transition:background 0.6s ease;
+  }
+  @media (hover:none){ body{ cursor:auto; } .cursor-plane{ display:none; } }
+  ::selection{ background:var(--blush); color:var(--ink); }
+
+  :focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:2px; }
+
+  h1,h2,h3{ font-family:'Playfair Display', serif; font-weight:500; }
+
+  a{ cursor:none; }
+
+  /* ---------- custom cursor: paper plane ---------- */
+  .cursor-plane{
+    position:fixed; top:0; left:0; width:30px; height:30px;
+    pointer-events:none; z-index:9999;
+    transform:translate(-50%,-50%);
+    filter:drop-shadow(0 3px 8px rgba(43,52,64,0.18));
+    transition:filter 0.3s ease;
+  }
+  .cursor-plane svg{ width:100%; height:100%; display:block; transition:transform 0.25s ease; }
+  .cursor-plane .plane-body{ fill:var(--accent); transition:fill 0.4s ease; }
+  .cursor-plane .plane-fold{ stroke:rgba(255,255,255,0.65); stroke-width:1; stroke-linecap:round; fill:none; }
+  .cursor-plane.hovering{ filter:drop-shadow(0 5px 14px var(--accent-dim)); }
+  .cursor-plane.hovering svg{ transform:scale(1.18); }
+
+  /* ---------- ambient moving background — two-layer depth ---------- */
+  .ambient-wash{ position:fixed; inset:0; z-index:-3; pointer-events:none; overflow:hidden; }
+  .ambient-wash span{ position:absolute; border-radius:50%; filter:blur(60px); }
+  .wash-1{ width:420px; height:420px; background:var(--blush); top:-10%; left:6%; opacity:0.42; animation:washA 24s ease-in-out infinite; }
+  .wash-2{ width:360px; height:360px; background:var(--teal); top:55%; right:2%; opacity:0.28; animation:washB 28s ease-in-out infinite; }
+  .wash-3{ width:300px; height:300px; background:var(--champagne); top:22%; right:26%; opacity:0.24; animation:washC 20s ease-in-out infinite; }
+  .wash-4{ width:340px; height:340px; background:var(--blush); bottom:-12%; right:12%; opacity:0.4; animation:washD 26s ease-in-out infinite; }
+  .wash-5{ width:260px; height:260px; background:var(--teal); bottom:8%; left:14%; opacity:0.28; animation:washE 22s ease-in-out infinite; }
+  @keyframes washA{ 0%,100%{ transform:translate(0,0); } 50%{ transform:translate(50px,40px); } }
+  @keyframes washB{ 0%,100%{ transform:translate(0,0); } 50%{ transform:translate(-40px,-35px); } }
+  @keyframes washC{ 0%,100%{ transform:translate(0,0); } 50%{ transform:translate(-28px,32px); } }
+  @keyframes washD{ 0%,100%{ transform:translate(0,0); } 50%{ transform:translate(-45px,-30px); } }
+  @keyframes washE{ 0%,100%{ transform:translate(0,0); } 50%{ transform:translate(32px,-28px); } }
+  @media (prefers-reduced-motion: reduce){ .ambient-wash span{ animation:none; } }
+
+  .ambient-orbs{ position:fixed; inset:0; z-index:-2; pointer-events:none; overflow:hidden; }
+  .ambient-orbs .orb{
+    position:absolute; border-radius:50%;
+    backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px);
+    border:1px solid rgba(255,255,255,0.7);
+    box-shadow:
+      inset -16px -18px 30px rgba(43,52,64,0.10),
+      inset 14px 16px 24px rgba(255,255,255,0.65),
+      0 26px 48px rgba(43,52,64,0.10);
+    animation-timing-function:ease-in-out; animation-iteration-count:infinite;
+  }
+  .ambient-orbs .orb::after{
+    content:"";
+    position:absolute; top:16%; left:22%;
+    width:24%; height:18%; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,255,255,0.95), rgba(255,255,255,0) 70%);
+    filter:blur(1px);
+  }
+  .orb-a{ width:380px; height:380px; top:-9%; right:3%; opacity:0.5;
+    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,0.9), rgba(234,201,206,0.32) 60%, transparent 78%);
+    animation-name:floatA; animation-duration:19s; }
+  .orb-b{ width:300px; height:300px; bottom:-10%; left:4%; opacity:0.4;
+    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,0.88), rgba(127,168,163,0.3) 60%, transparent 78%);
+    animation-name:floatB; animation-duration:23s; }
+  .orb-c{ width:190px; height:190px; top:36%; right:20%; opacity:0.35;
+    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,0.9), rgba(201,166,107,0.28) 60%, transparent 78%);
+    animation-name:floatC; animation-duration:17s; }
+  .orb-d{ width:230px; height:230px; top:12%; left:8%; opacity:0.4;
+    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,0.88), rgba(127,168,163,0.26) 60%, transparent 78%);
+    animation-name:floatD; animation-duration:25s; }
+  .orb-e{ width:260px; height:260px; bottom:6%; right:-6%; opacity:0.45;
+    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,0.9), rgba(234,201,206,0.3) 60%, transparent 78%);
+    animation-name:floatE; animation-duration:21s; }
+  .orb-f{ width:150px; height:150px; bottom:32%; left:16%; opacity:0.3;
+    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,0.9), rgba(201,166,107,0.26) 60%, transparent 78%);
+    animation-name:floatF; animation-duration:15s; }
+  @keyframes floatA{ 0%,100%{ transform:translate(0,0) scale(1); } 50%{ transform:translate(-30px,40px) scale(1.06); } }
+  @keyframes floatB{ 0%,100%{ transform:translate(0,0) scale(1); } 50%{ transform:translate(35px,-30px) scale(1.05); } }
+  @keyframes floatC{ 0%,100%{ transform:translate(0,0) scale(1); } 50%{ transform:translate(-22px,-34px) scale(1.08); } }
+  @keyframes floatD{ 0%,100%{ transform:translate(0,0) scale(1); } 50%{ transform:translate(28px,26px) scale(1.05); } }
+  @keyframes floatE{ 0%,100%{ transform:translate(0,0) scale(1); } 50%{ transform:translate(-34px,-22px) scale(1.06); } }
+  @keyframes floatF{ 0%,100%{ transform:translate(0,0) scale(1); } 50%{ transform:translate(24px,-30px) scale(1.07); } }
+  @media (prefers-reduced-motion: reduce){ .ambient-orbs .orb{ animation:none; } }
+
+  /* ---------- sound toggle ---------- */
+  .sound-toggle{
+    display:flex; align-items:center; justify-content:center;
+    width:34px; height:34px; padding:0; border-radius:50%;
+    border:1px solid rgba(43,52,64,0.12); background:rgba(255,255,255,0.5);
+    color:var(--ink-soft); cursor:none;
+    transition:border-color 0.3s ease, color 0.3s ease, background 0.3s ease;
+  }
+  .sound-toggle:hover{ background:var(--accent); color:#fff; border-color:var(--accent); transform:none; box-shadow:none; }
+  .sound-toggle svg{ width:16px; height:16px; }
+  .sound-toggle path{ fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+  .sound-toggle .bar{ fill:currentColor; stroke:none; }
+
+  /* ---------- layout ---------- */
+
+  .wrap{ max-width:840px; margin:0 auto; padding:120px 24px 100px; }
+
+  .glass-nav{
+    position:fixed; top:22px; left:50%; transform:translateX(-50%); z-index:100;
+    display:flex; align-items:center; gap:1.8rem;
+    padding:0.65rem 0.65rem 0.65rem 1.5rem; border-radius:999px;
+    background:rgba(255,255,255,0.55);
+    backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%);
+    border:1px solid rgba(255,255,255,0.8);
+    box-shadow:0 8px 32px rgba(43,52,64,0.08);
+  }
+  .glass-nav .logo{ font-family:'Playfair Display', serif; font-weight:600; font-size:1.02rem; letter-spacing:0.01em; white-space:nowrap; }
+  .glass-nav .logo em{ font-style:italic; color:var(--accent); transition:color 0.5s ease; }
+
+  .mode-tabs{ display:flex; gap:0.3rem; background:var(--mist); border-radius:999px; padding:0.3rem; }
+  .mode-tab{
+    font-family:'Outfit', sans-serif; font-size:0.78rem; font-weight:500;
+    letter-spacing:0.02em; color:var(--ink-soft);
+    background:transparent; border:none; border-radius:999px;
+    padding:0.5rem 1.05rem; cursor:none;
+    transition:background 0.3s ease, color 0.3s ease;
+  }
+  .mode-tab:hover{ color:var(--ink); }
+  .mode-tab[data-active="true"]{ background:#fff; color:var(--tab-color); box-shadow:0 2px 10px rgba(43,52,64,0.08); }
+  .mode-tab:disabled{ opacity:0.4; cursor:not-allowed; }
+  .mode-tab[data-mode="presentation"]{ --tab-color: var(--teal); }
+  .mode-tab[data-mode="conversation"]{ --tab-color: var(--blush-deep); }
+  .mode-tab[data-mode="interview"]{ --tab-color: var(--champagne); }
+
+  .stats-pill{ font-size:0.72rem; color:var(--ink-soft); white-space:nowrap; padding-right:0.4rem; }
+
+  @media (max-width:720px){
+    .glass-nav{ flex-direction:column; gap:0.7rem; padding:0.9rem; width:min(92vw,360px); }
+    .stats-pill{ display:none; }
+  }
+
+  .eyebrow{ font-size:0.76rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--accent); margin-bottom:0.9rem; font-weight:500; transition:color 0.5s ease; }
+  .session-title{ font-size:clamp(1.5rem,3.4vw,2.05rem); line-height:1.32; max-width:34ch; margin-bottom:2.2rem; color:var(--ink); }
+
+  .glass-card{
+    background:rgba(255,255,255,0.72);
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    border:1px solid rgba(255,255,255,0.9);
+    border-radius:22px;
+    box-shadow:0 18px 46px rgba(43,52,64,0.07);
+    padding:2.2rem 1.8rem 2rem;
+    margin-bottom:1.8rem;
+  }
+
+  textarea, input[type=text]{
+    width:100%;
+    background:rgba(255,255,255,0.75);
+    border:1px solid rgba(43,52,64,0.1);
+    border-radius:14px;
+    color:var(--ink);
+    font-family:'Outfit', sans-serif; font-weight:300;
+    font-size:1rem;
+    line-height:1.6;
+    padding:0.95rem 1.1rem;
+    resize:vertical;
+    transition:border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  textarea:focus, input:focus{ border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-dim); outline:none; }
+
+  .field-label{ font-size:0.74rem; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:0.6rem; font-weight:500; }
+
+  button{
+    font-family:'Outfit', sans-serif; font-size:0.85rem; font-weight:500;
+    letter-spacing:0.01em;
+    background:transparent;
+    color:var(--accent);
+    border:1px solid var(--accent);
+    border-radius:999px;
+    padding:0.75rem 1.5rem;
+    cursor:none;
+    transition:background 0.3s ease, color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  button:hover{ background:var(--accent); color:#fff; transform:translateY(-2px); box-shadow:0 10px 26px var(--accent-dim); }
+  button.primary{ background:var(--accent); color:#fff; }
+  button.primary:hover{ filter:brightness(1.06); }
+  button.ghost{ border-color:rgba(43,52,64,0.16); color:var(--ink-soft); }
+  button.ghost:hover{ background:rgba(43,52,64,0.06); color:var(--ink); box-shadow:none; }
+  button.danger{ border-color:var(--blush-deep); color:var(--blush-deep); }
+  button.danger:hover{ background:var(--blush-deep); color:#fff; box-shadow:0 10px 26px var(--blush-dim); }
+  button:disabled{ opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
+
+  .actions{ display:flex; gap:0.7rem; flex-wrap:wrap; margin-top:0.4rem; }
+
+  /* ---------- prompt & recording ---------- */
+
+  .prompt-card{
+    background:rgba(255,255,255,0.8);
+    border-left:4px solid var(--accent);
+    border-radius:16px;
+    padding:1.6rem 1.7rem;
+    font-family:'Playfair Display', serif; font-size:1.2rem; line-height:1.5;
+    margin-bottom:1.4rem;
+    box-shadow:0 10px 26px var(--accent-dim);
+    transition:border-color 0.5s ease, box-shadow 0.5s ease;
+  }
+
+  .rec-row{ display:flex; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1.6rem; }
+  .rec-btn{
+    display:flex; align-items:center; gap:0.6rem;
+    background:var(--accent); color:#fff; border-color:var(--accent);
+    padding:0.85rem 1.7rem; font-size:0.9rem;
+  }
+  .rec-btn .dot{ width:9px; height:9px; border-radius:50%; background:#fff; }
+  .rec-btn[data-recording="true"]{ background:var(--blush-deep); border-color:var(--blush-deep); }
+  .rec-btn[data-recording="true"] .dot{ animation:pulse 1.1s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:0.4; transform:scale(0.7); } }
+  @media (prefers-reduced-motion: reduce){ .rec-btn[data-recording="true"] .dot{ animation:none; } }
+
+  .live-timer{ font-family:'Outfit', sans-serif; font-weight:500; font-size:1.05rem; color:var(--ink-soft); }
+  .live-stats{ display:flex; gap:1.4rem; font-size:0.8rem; color:var(--ink-soft); flex-wrap:wrap; }
+  .live-stats b{ color:var(--ink); font-weight:500; }
+
+  .transcript-box{
+    background:rgba(255,255,255,0.75);
+    border:1px solid rgba(43,52,64,0.1);
+    border-radius:16px;
+    padding:1.2rem 1.4rem;
+    min-height:120px; max-height:260px; overflow-y:auto;
+    font-size:0.98rem; line-height:1.7; color:var(--ink);
+    margin-bottom:1.2rem;
+  }
+  .transcript-box .interim{ color:var(--ink-soft); }
+  .transcript-box .filler{ color:var(--blush-deep); background:var(--blush-dim); border-radius:4px; padding:0 2px; }
+  .transcript-box:empty::before{ content:"Your words will appear here as you speak..."; color:var(--ink-soft); font-style:italic; opacity:0.8; }
+
+  .notice{
+    font-size:0.85rem; color:var(--ink-soft); line-height:1.55;
+    background:rgba(255,255,255,0.55); border:1px dashed rgba(43,52,64,0.15);
+    border-radius:14px; padding:0.9rem 1.1rem; margin-bottom:1.4rem;
+  }
+  .notice.error{ color:var(--blush-deep); border-color:rgba(201,138,150,0.5); }
+
+  .summary-card{
+    background:rgba(255,255,255,0.8);
+    border-radius:20px; border:1px solid rgba(255,255,255,0.9);
+    box-shadow:0 18px 46px rgba(43,52,64,0.08);
+    padding:1.8rem 1.8rem 1.6rem; margin-bottom:1.6rem;
+  }
+  .summary-stats{ display:flex; gap:2rem; flex-wrap:wrap; margin-bottom:1.4rem; }
+  .summary-stat{ display:flex; flex-direction:column; gap:0.2rem; }
+  .summary-stat .n{ font-family:'Playfair Display', serif; font-size:1.7rem; color:var(--ink); }
+  .summary-stat .l{ font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-soft); }
+  audio{ width:100%; margin-bottom:1.2rem; border-radius:999px; }
+
+  /* ---------- AI feedback ---------- */
+
+  .feedback-zone{ border-top:1px solid rgba(43,52,64,0.08); margin-top:0.4rem; padding-top:1.4rem; }
+  .key-form{ display:flex; flex-direction:column; gap:0.7rem; }
+  .key-form input{ font-size:0.9rem; }
+  .key-note{ font-size:0.78rem; color:var(--ink-soft); line-height:1.55; }
+  .key-note a{ color:var(--accent); }
+  .feedback-loading{ font-size:0.9rem; color:var(--ink-soft); font-style:italic; display:flex; align-items:center; gap:0.6rem; }
+  .feedback-loading .spinner{
+    width:14px; height:14px; border-radius:50%;
+    border:2px solid rgba(43,52,64,0.15); border-top-color:var(--accent);
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce){ .feedback-loading .spinner{ animation:none; } }
+  .feedback-text{
+    background:rgba(255,255,255,0.7);
+    border-left:3px solid var(--accent);
+    border-radius:12px;
+    padding:1.1rem 1.3rem;
+    font-size:0.96rem; line-height:1.7; color:var(--ink);
+    margin-bottom:0.8rem;
+  }
+  .change-key{ font-size:0.75rem; color:var(--ink-soft); background:none; border:none; padding:0.1rem 0; text-decoration:underline; text-transform:none; letter-spacing:0; }
+  .change-key:hover{ color:var(--accent); background:none; transform:none; box-shadow:none; }
+
+  /* ---------- log ---------- */
+
+  .log-section{ margin-top:4.5rem; padding-top:2.2rem; border-top:1px solid rgba(43,52,64,0.1); }
+  .log-header{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:1.2rem; }
+  .log-header h2{ font-size:1.25rem; }
+  .log-header .count{ font-size:0.75rem; color:var(--ink-soft); }
+  .log-empty{ color:var(--ink-soft); font-size:0.92rem; font-style:italic; }
+
+  .log-entry{
+    background:rgba(255,255,255,0.7);
+    border:1px solid rgba(43,52,64,0.07);
+    border-radius:16px;
+    padding:1.05rem 1.2rem;
+    margin-bottom:0.7rem;
+    cursor:none;
+    transition:box-shadow 0.3s ease, transform 0.3s ease;
+  }
+  .log-entry:hover{ box-shadow:0 10px 26px rgba(43,52,64,0.09); transform:translateY(-2px); }
+  .log-entry .row1{ display:flex; align-items:center; gap:0.7rem; justify-content:space-between; }
+  .log-entry .tag{ font-size:0.68rem; text-transform:uppercase; letter-spacing:0.06em; padding:0.22rem 0.65rem; border-radius:999px; font-weight:500; }
+  .log-entry .tag.presentation{ color:var(--teal); background:var(--teal-dim); }
+  .log-entry .tag.conversation{ color:var(--blush-deep); background:var(--blush-dim); }
+  .log-entry .tag.interview{ color:var(--champagne); background:var(--champagne-dim); }
+  .log-entry .date{ font-size:0.72rem; color:var(--ink-soft); }
+  .log-entry .headline{ font-size:0.95rem; margin-top:0.6rem; color:var(--ink); }
+  .log-entry .detail{ display:none; margin-top:0.8rem; padding-top:0.8rem; border-top:1px solid rgba(43,52,64,0.08); font-size:0.9rem; line-height:1.65; color:var(--ink-soft); white-space:pre-wrap; }
+  .log-entry[data-expanded="true"] .detail{ display:block; }
+  .log-entry .del{ font-size:0.68rem; color:var(--ink-soft); background:none; border:none; padding:0.15rem 0.3rem; text-transform:none; letter-spacing:0; }
+  .log-entry .del:hover{ color:var(--blush-deep); background:none; transform:none; box-shadow:none; }
+
+  @media (max-width:640px){
+    .summary-stats{ gap:1.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor-plane" id="cursorPlane">
+  <svg viewBox="0 0 24 24">
+    <path class="plane-body" d="M22 12 L3 4 L9 12 L3 20 Z"/>
+    <path class="plane-fold" d="M9 12 L22 12"/>
+  </svg>
+</div>
+
+<div class="ambient-wash">
+  <span class="wash-1"></span>
+  <span class="wash-2"></span>
+  <span class="wash-3"></span>
+  <span class="wash-4"></span>
+  <span class="wash-5"></span>
+</div>
+
+<div class="ambient-orbs">
+  <span class="orb orb-a"></span>
+  <span class="orb orb-b"></span>
+  <span class="orb orb-c"></span>
+  <span class="orb orb-d"></span>
+  <span class="orb orb-e"></span>
+  <span class="orb orb-f"></span>
+</div>
+
+<nav class="glass-nav">
+  <div class="logo">Speaking <em>Gym</em></div>
+  <div class="mode-tabs">
+    <button class="mode-tab" data-mode="presentation" data-active="true" onclick="setMode('presentation')">Presentation</button>
+    <button class="mode-tab" data-mode="conversation" onclick="setMode('conversation')">Conversation</button>
+    <button class="mode-tab" data-mode="interview" onclick="setMode('interview')">Interview</button>
+  </div>
+  <button class="sound-toggle" id="soundToggle" aria-label="Toggle sound" title="Toggle sound">
+    <svg viewBox="0 0 24 24" id="soundIcon">
+      <path class="bar" d="M4 9v6h4l5 5V4L8 9H4z"/>
+      <path d="M16.2 8.8a5 5 0 0 1 0 6.4"/>
+      <path d="M18.6 6.4a8.5 8.5 0 0 1 0 11.2"/>
+    </svg>
+  </button>
+  <div class="stats-pill" id="stats"></div>
+</nav>
+
+<div class="wrap">
+
+  <div class="eyebrow" id="modeEyebrow">Presentation Practice</div>
+  <h1 class="session-title" id="modeTitle">Give a short talk on the prompt below. Speak like someone's actually listening — because soon, they will be.</h1>
+
+  <div class="prompt-card" id="promptCard">—</div>
+
+  <div class="actions" style="margin-bottom:1.6rem;">
+    <button class="ghost" id="newPromptBtn" onclick="newPrompt()">New prompt</button>
+  </div>
+
+  <div id="setupNotice"></div>
+
+  <div class="rec-row">
+    <button class="rec-btn" id="recBtn" data-recording="false" onclick="toggleRecording()">
+      <span class="dot"></span><span id="recBtnLabel">Start speaking</span>
+    </button>
+    <div class="live-timer" id="liveTimer" style="display:none;">00:00</div>
+    <div class="live-stats" id="liveStats" style="display:none;">
+      <span><b id="liveWords">0</b> words</span>
+      <span><b id="liveWpm">0</b> wpm</span>
+      <span><b id="liveFillers">0</b> fillers</span>
+    </div>
+  </div>
+
+  <div class="transcript-box" id="transcriptBox" style="display:none;"></div>
+
+  <div id="summaryArea"></div>
+
+  <section class="log-section">
+    <div class="log-header">
+      <h2>Session Log</h2>
+      <div class="count" id="logCount">0 sessions</div>
+    </div>
+    <div id="logList"></div>
+  </section>
+
+</div>
+
+<script>
+/* ---------------- prompt pools ---------------- */
+
+const PROMPTS = {
+  presentation: [
+    "Convince your team to try a new tool or process at work.",
+    "Explain a concept from your field to someone with zero background in it.",
+    "Pitch an idea for a project you'd love to build, in under 3 minutes.",
+    "Argue for or against remote work.",
+    "Describe the most interesting problem you've solved recently and why it mattered.",
+    "Give a toast at a friend's wedding you just met an hour ago.",
+    "Explain why your favorite hobby is worth trying.",
+    "Present the case for or against AI regulation.",
+    "Describe your ideal way to spend a Sunday, as if pitching a product.",
+    "Explain a mistake you made and what it taught you.",
+    "Make the case for learning a skill that seems useless at first.",
+    "Describe a place you've traveled to as if selling it as a destination.",
+    "Explain why failure is, or isn't, necessary for growth.",
+    "Give a 2-minute summary of a book or article that changed how you think.",
+    "Argue for why humans should, or shouldn't, explore space further.",
+    "Explain your career path so far as if telling a story.",
+    "Make the case for slowing down in a fast-paced world.",
+    "Describe an invention you wish existed.",
+    "Explain a technical topic from your own work to a general audience.",
+    "Present three lessons you've learned from a failure.",
+    "Pitch a new feature for a product you use every day.",
+    "Argue for or against a four-day work week.",
+    "Make the case for a 'boring' skill actually being a superpower.",
+    "Argue that constraints make creativity better, not worse.",
+    "Present the strongest counterargument to something you believe — better than most people who actually hold it.",
+    "Pitch a fictional startup idea in under 2 minutes.",
+    "Argue for or against multitasking.",
+    "Explain why small talk matters more than people think.",
+    "Give a 2-minute eulogy for a piece of technology that's now obsolete.",
+    "Argue for why curiosity is a skill, not just a trait.",
+    "Present a case for why your hometown deserves more attention.",
+    "Give a short talk on what you'd change about how people learn.",
+    "Explain a hobby of yours as if it were a competitive sport.",
+    "Pitch an idea to improve something in your daily routine.",
+    "Explain the last thing that genuinely surprised you, and why it should surprise others too."
+  ],
+  conversation: [
+    "What's a small thing that made you happy this week?",
+    "Describe your morning routine in detail.",
+    "What's a skill you're currently learning, and why?",
+    "Tell me about a city you'd love to live in.",
+    "What's something you changed your mind about recently?",
+    "Describe your perfect weekend.",
+    "What's a piece of advice you'd give your younger self?",
+    "Talk about a challenge you're facing right now.",
+    "What's your favorite way to unwind after a long day?",
+    "Describe a friend who has influenced you a lot.",
+    "What's a food you could eat every day?",
+    "Talk about a goal you're working toward.",
+    "Describe the last movie or show you really enjoyed.",
+    "What does a perfect work day look like for you?",
+    "Talk about something you're curious about but haven't explored yet.",
+    "Describe your relationship with technology.",
+    "What's a habit you're trying to build or break?",
+    "Talk about a time you felt proud of yourself.",
+    "Describe how you'd explain your job to a child.",
+    "What's something you wish more people asked you about?",
+    "What's a rule you break on purpose, and why?",
+    "Describe a time you had to adapt quickly to a new environment.",
+    "What's something you're better at now than a year ago?",
+    "Talk about a decision you're glad you made.",
+    "Describe what 'productive' actually means to you.",
+    "What's a conversation you've had that changed your perspective?",
+    "Talk about something you do differently than most people you know.",
+    "Describe your relationship with failure.",
+    "What's a place that feels like home, even if it isn't where you live?",
+    "Talk about a time you had to say no to something you wanted to say yes to.",
+    "Describe a small ritual that matters to you.",
+    "What's something you're looking forward to?",
+    "Talk about how your taste in something has changed over time.",
+    "Describe a moment you felt completely present.",
+    "What's a question you wish people asked each other more often?"
+  ],
+  interview: [
+    "Tell me about yourself.",
+    "Tell me about a time you faced a conflict with a teammate. How did you handle it?",
+    "Describe a project you're most proud of and why.",
+    "Tell me about a time you failed. What did you learn?",
+    "How do you handle tight deadlines?",
+    "Describe a time you had to learn something quickly.",
+    "Tell me about a time you disagreed with a decision. What did you do?",
+    "What's your biggest weakness, and how are you working on it?",
+    "Tell me about a time you took initiative without being asked.",
+    "Describe how you handle feedback or criticism.",
+    "Tell me about a time you had to explain something complex to someone.",
+    "Why do you want to work in this field?",
+    "Tell me about a time you had to prioritize multiple tasks.",
+    "Describe a time you made a mistake at work or school.",
+    "How do you handle ambiguity when a task isn't clearly defined?",
+    "Tell me about a time you had to persuade someone.",
+    "Describe your ideal team environment.",
+    "Tell me about a time you went beyond what was expected.",
+    "How do you stay motivated on long projects?",
+    "Where do you see yourself in five years?",
+    "Tell me about a time you had to give difficult feedback to someone.",
+    "Describe a situation where you had incomplete information and had to decide anyway.",
+    "Tell me about a time you had to work with someone very different from you.",
+    "How do you approach learning a new tool or technology quickly?",
+    "Tell me about a time a project didn't go as planned. What did you do?",
+    "Describe a time you had to say no to a request at work.",
+    "What's a professional accomplishment you're proud of, and why?",
+    "Describe how you handle competing priorities from different people.",
+    "Tell me about a time you had to advocate for an idea no one else supported.",
+    "How do you approach a task you've never done before?",
+    "Describe a time you helped a teammate succeed.",
+    "Tell me about a time you had to adjust your communication style for a specific audience.",
+    "What does success look like to you in this role?",
+    "Tell me about a time you took a risk that paid off — or didn't."
+  ]
+};
+
+const MODE_META = {
+  presentation: {
+    accent:"var(--teal)", dim:"var(--teal-dim)", rgb:"127,168,163",
+    eyebrow:"Presentation Practice",
+    title:"Give a short talk on the prompt below. Speak like someone's actually listening — because soon, they will be.",
+    seconds: 180
+  },
+  conversation: {
+    accent:"var(--blush-deep)", dim:"var(--blush-dim)", rgb:"201,138,150",
+    eyebrow:"Conversation Fluency",
+    title:"Answer like you're talking to a friend. Don't polish it in your head first — just start.",
+    seconds: 90
+  },
+  interview: {
+    accent:"var(--champagne)", dim:"var(--champagne-dim)", rgb:"201,166,107",
+    eyebrow:"Interview Practice",
+    title:"Answer as if this were the real thing. Structure it, but don't over-rehearse it.",
+    seconds: 120
+  }
+};
+
+const FILLER_WORDS = ["um","umm","uh","uhh","like","you know","i mean","sort of","kind of","basically","actually","literally","so","right","well","just"];
+
+function makeBag(items){
+  let bag = [];
+  return function next(){
+    if(bag.length === 0){ bag = [...items].sort(()=>Math.random()-0.5); }
+    return bag.pop();
+  };
+}
+const promptBags = {
+  presentation: makeBag(PROMPTS.presentation),
+  conversation: makeBag(PROMPTS.conversation),
+  interview: makeBag(PROMPTS.interview)
+};
+
+/* ---------------- state ---------------- */
+
+const STORAGE_KEY = "speakingGymSessions";
+function loadSessions(){
+  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch(e){ return []; }
+}
+function saveSessions(list){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+let sessions = loadSessions();
+
+let currentMode = "presentation";
+let currentPrompt = "";
+let isRecording = false;
+let finalTranscript = "";
+let interimTranscript = "";
+let recognition = null;
+let recognitionSupported = false;
+let mediaRecorder = null;
+let audioChunks = [];
+let audioURL = null;
+let mediaStream = null;
+let elapsedSeconds = 0;
+let timerInterval = null;
+
+/* ---------------- mode switching ---------------- */
+
+function setMode(mode){
+  if(isRecording) return;
+  currentMode = mode;
+  document.querySelectorAll(".mode-tab").forEach(b => b.dataset.active = (b.dataset.mode === mode) ? "true" : "false");
+  const meta = MODE_META[mode];
+  document.documentElement.style.setProperty("--accent", meta.accent);
+  document.documentElement.style.setProperty("--accent-dim", meta.dim);
+  document.documentElement.style.setProperty("--accent-rgb", meta.rgb);
+  document.getElementById("modeEyebrow").textContent = meta.eyebrow;
+  document.getElementById("modeTitle").textContent = meta.title;
+  newPrompt();
+  clearSummary();
+}
+
+function newPrompt(){
+  currentPrompt = promptBags[currentMode]();
+  document.getElementById("promptCard").textContent = currentPrompt;
+}
+
+/* ---------------- audio tones ---------------- */
+
+let audioCtx = null;
+let soundEnabled = (localStorage.getItem("speakingGymSound") !== "off");
+function getAudioCtx(){
+  if(!audioCtx){ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+  if(audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+function playTone(freq, startTime, duration, type, peakGain){
+  if(!soundEnabled) return;
+  const ctx = getAudioCtx();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type || "sine";
+  osc.frequency.value = freq;
+  const t0 = ctx.currentTime + startTime;
+  gain.gain.setValueAtTime(0, t0);
+  gain.gain.linearRampToValueAtTime(peakGain || 0.1, t0 + 0.04);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(t0);
+  osc.stop(t0 + duration + 0.05);
+}
+function playStartTone(){ playTone(660, 0, 0.3, "sine", 0.1); }
+function playStopTone(){ playTone(440, 0, 0.3, "sine", 0.1); }
+function playChimeTone(){
+  playTone(523.25, 0,    0.9, "sine", 0.14);
+  playTone(659.25, 0.12, 0.9, "sine", 0.12);
+  playTone(783.99, 0.24, 1.1, "sine", 0.10);
+}
+function updateSoundIcon(){
+  const btn = document.getElementById("soundToggle");
+  const waves = document.querySelectorAll("#soundIcon path:not(.bar)");
+  waves.forEach(w => w.style.display = soundEnabled ? "" : "none");
+  btn.style.opacity = soundEnabled ? "1" : "0.5";
+}
+document.getElementById("soundToggle").addEventListener("click", () => {
+  soundEnabled = !soundEnabled;
+  localStorage.setItem("speakingGymSound", soundEnabled ? "on" : "off");
+  updateSoundIcon();
+  if(soundEnabled){ playTone(600, 0, 0.16, "sine", 0.08); }
+});
+updateSoundIcon();
+
+/* ---------------- filler detection & transcript rendering ---------------- */
+
+function countFillers(text){
+  let count = 0;
+  FILLER_WORDS.forEach(w => {
+    const re = new RegExp("\\b" + w.replace(/\s+/g,"\\s+") + "\\b", "gi");
+    const m = text.match(re);
+    if(m) count += m.length;
+  });
+  return count;
+}
+function highlightFillers(text){
+  let escaped = text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  FILLER_WORDS.forEach(w => {
+    const re = new RegExp("\\b(" + w.replace(/\s+/g,"\\s+") + ")\\b", "gi");
+    escaped = escaped.replace(re, '<span class="filler">$1</span>');
+  });
+  return escaped;
+}
+function renderTranscript(){
+  const box = document.getElementById("transcriptBox");
+  const finalHtml = highlightFillers(finalTranscript);
+  const interimHtml = interimTranscript ? '<span class="interim">' + highlightFillers(interimTranscript) + '</span>' : '';
+  box.innerHTML = finalHtml + interimHtml;
+  box.scrollTop = box.scrollHeight;
+}
+
+/* ---------------- speech recognition setup ---------------- */
+
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+recognitionSupported = !!SpeechRecognitionAPI;
+
+function buildRecognition(){
+  const rec = new SpeechRecognitionAPI();
+  rec.continuous = true;
+  rec.interimResults = true;
+  rec.lang = "en-US";
+  rec.onresult = (event) => {
+    let interim = "";
+    for(let i = event.resultIndex; i < event.results.length; i++){
+      const transcriptPiece = event.results[i][0].transcript;
+      if(event.results[i].isFinal){
+        finalTranscript += transcriptPiece + " ";
+      } else {
+        interim += transcriptPiece;
+      }
+    }
+    interimTranscript = interim;
+    renderTranscript();
+    updateLiveStats();
+  };
+  rec.onerror = (e) => {
+    if(e.error === "not-allowed" || e.error === "service-not-allowed"){
+      showNotice("Microphone access was blocked. Check your browser's site permissions and try again.", true);
+      stopRecording(true);
+    }
+  };
+  rec.onend = () => {
+    if(isRecording){
+      try{ rec.start(); } catch(e){}
+    }
+  };
+  return rec;
+}
+
+/* ---------------- live stats ---------------- */
+
+function updateLiveStats(){
+  const words = (finalTranscript.trim().match(/\S+/g) || []).length;
+  const fillers = countFillers(finalTranscript);
+  const minutes = Math.max(elapsedSeconds / 60, 1/60);
+  const wpm = Math.round(words / minutes);
+  document.getElementById("liveWords").textContent = words;
+  document.getElementById("liveWpm").textContent = wpm;
+  document.getElementById("liveFillers").textContent = fillers;
+}
+
+function formatTime(s){
+  const m = Math.floor(s/60).toString().padStart(2,"0");
+  const sec = (s%60).toString().padStart(2,"0");
+  return m+":"+sec;
+}
+
+/* ---------------- notices ---------------- */
+
+function showNotice(text, isError){
+  const el = document.getElementById("setupNotice");
+  el.innerHTML = '<div class="notice' + (isError ? ' error' : '') + '">' + text + '</div>';
+}
+function clearNotice(){ document.getElementById("setupNotice").innerHTML = ""; }
+
+/* ---------------- recording flow ---------------- */
+
+async function toggleRecording(){
+  if(isRecording){
+    stopRecording(false);
+  } else {
+    await startRecording();
+  }
+}
+
+async function startRecording(){
+  clearNotice();
+  clearSummary();
+  finalTranscript = "";
+  interimTranscript = "";
+  elapsedSeconds = 0;
+  audioChunks = [];
+  if(audioURL){ URL.revokeObjectURL(audioURL); audioURL = null; }
+
+  try{
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch(err){
+    showNotice("Couldn't access your microphone. Your browser may be blocking mic access on a local file, or permission was denied — check your browser's site settings.", true);
+    return;
+  }
+
+  isRecording = true;
+  playStartTone();
+  document.getElementById("recBtn").dataset.recording = "true";
+  document.getElementById("recBtnLabel").textContent = "Stop";
+  document.getElementById("newPromptBtn").disabled = true;
+  document.querySelectorAll(".mode-tab").forEach(b => b.disabled = true);
+  document.getElementById("liveTimer").style.display = "block";
+  document.getElementById("transcriptBox").style.display = "block";
+  document.getElementById("transcriptBox").innerHTML = "";
+
+  if(recognitionSupported){
+    document.getElementById("liveStats").style.display = "flex";
+    recognition = buildRecognition();
+    try{ recognition.start(); } catch(e){}
+  } else {
+    showNotice("Live transcript isn't available in this browser — recording will still work, and you can review the audio afterward. Try Chrome for live transcript and filler-word tracking.");
+  }
+
+  try{
+    mediaRecorder = new MediaRecorder(mediaStream);
+    mediaRecorder.ondataavailable = (e) => { if(e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.start();
+  } catch(e){
+    mediaRecorder = null;
+  }
+
+  timerInterval = setInterval(() => {
+    elapsedSeconds++;
+    document.getElementById("liveTimer").textContent = formatTime(elapsedSeconds);
+    if(recognitionSupported) updateLiveStats();
+  }, 1000);
+}
+
+function stopRecording(silent){
+  isRecording = false;
+  clearInterval(timerInterval);
+  silentDiscard = !!silent;
+  if(!silent) playStopTone();
+
+  document.getElementById("recBtn").dataset.recording = "false";
+  document.getElementById("recBtnLabel").textContent = "Start speaking";
+  document.getElementById("newPromptBtn").disabled = false;
+  document.querySelectorAll(".mode-tab").forEach(b => b.disabled = false);
+
+  if(recognition){
+    recognition.onend = null;
+    try{ recognition.stop(); } catch(e){}
+    recognition = null;
+  }
+
+  if(mediaRecorder && mediaRecorder.state !== "inactive"){
+    mediaRecorder.onstop = () => {
+      if(audioChunks.length){
+        const blob = new Blob(audioChunks, { type: "audio/webm" });
+        audioURL = URL.createObjectURL(blob);
+      }
+      finishSession();
+    };
+    mediaRecorder.stop();
+  } else {
+    finishSession();
+  }
+
+  if(mediaStream){
+    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
+  }
+}
+
+let silentDiscard = false;
+
+function finishSession(){
+  if(elapsedSeconds >= 3 && !silentDiscard){
+    playChimeTone();
+    renderSummary();
+  }
+  silentDiscard = false;
+}
+
+function clearSummary(){
+  document.getElementById("summaryArea").innerHTML = "";
+}
+
+function renderSummary(){
+  const words = (finalTranscript.trim().match(/\S+/g) || []).length;
+  const fillers = countFillers(finalTranscript);
+  const minutes = Math.max(elapsedSeconds / 60, 1/60);
+  const wpm = Math.round(words / minutes);
+  const fillerRate = words > 0 ? Math.round((fillers / words) * 100) : 0;
+
+  lastStats = { duration: formatTime(elapsedSeconds), words, wpm, fillers, fillerRate };
+
+  const area = document.getElementById("summaryArea");
+  area.innerHTML = `
+    <div class="summary-card">
+      <div class="field-label">session summary</div>
+      <div class="summary-stats">
+        <div class="summary-stat"><span class="n">${formatTime(elapsedSeconds)}</span><span class="l">duration</span></div>
+        <div class="summary-stat"><span class="n">${words}</span><span class="l">words</span></div>
+        <div class="summary-stat"><span class="n">${recognitionSupported ? wpm : "—"}</span><span class="l">words / min</span></div>
+        <div class="summary-stat"><span class="n">${recognitionSupported ? fillers : "—"}</span><span class="l">filler words</span></div>
+        <div class="summary-stat"><span class="n">${recognitionSupported ? fillerRate + "%" : "—"}</span><span class="l">filler rate</span></div>
+      </div>
+      ${audioURL ? '<audio controls src="'+audioURL+'"></audio>' : ''}
+      <div class="actions">
+        <button class="primary" onclick="saveSpeakingSession()">Save session</button>
+        <button class="ghost" onclick="clearSummary()">Discard</button>
+      </div>
+      <div class="feedback-zone" id="feedbackZone"></div>
+    </div>
+  `;
+  renderFeedbackZone();
+}
+
+/* ---------------- AI feedback ---------------- */
+
+let lastStats = null;
+const API_KEY_STORAGE = "speakingGymApiKey";
+
+function getSavedApiKey(){
+  return localStorage.getItem(API_KEY_STORAGE) || "";
+}
+
+function renderFeedbackZone(){
+  const zone = document.getElementById("feedbackZone");
+  if(!zone) return;
+
+  const hasTranscript = recognitionSupported && finalTranscript.trim().length > 0;
+  if(!hasTranscript){
+    zone.innerHTML = '<div class="key-note">AI feedback needs a transcript, which requires a Chrome-based browser with live transcript support.</div>';
+    return;
+  }
+
+  const key = getSavedApiKey();
+  if(!key){
+    zone.innerHTML = `
+      <div class="field-label">ai feedback</div>
+      <div class="key-form">
+        <input type="password" id="apiKeyInput" placeholder="Paste your Anthropic API key (sk-ant-...)">
+        <div class="key-note">
+          Stored only in this browser's local storage — never sent anywhere except directly to Anthropic when you request feedback.
+          Get a key at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a> (usage is billed to your own account).
+        </div>
+        <div class="actions">
+          <button class="primary" onclick="saveApiKeyFromForm()">Save key &amp; get feedback</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  zone.innerHTML = `
+    <div class="field-label">ai feedback</div>
+    <div class="actions" style="margin-bottom:0.6rem;">
+      <button class="ghost" onclick="requestFeedback()">Get AI feedback</button>
+      <button class="change-key" onclick="clearApiKey()">change API key</button>
+    </div>
+  `;
+}
+
+function saveApiKeyFromForm(){
+  const input = document.getElementById("apiKeyInput");
+  const key = input ? input.value.trim() : "";
+  if(!key) return;
+  localStorage.setItem(API_KEY_STORAGE, key);
+  renderFeedbackZone();
+  requestFeedback();
+}
+
+function clearApiKey(){
+  localStorage.removeItem(API_KEY_STORAGE);
+  renderFeedbackZone();
+}
+
+async function requestFeedback(){
+  const zone = document.getElementById("feedbackZone");
+  const key = getSavedApiKey();
+  if(!key || !zone) return;
+
+  zone.innerHTML = `
+    <div class="field-label">ai feedback</div>
+    <div class="feedback-loading"><span class="spinner"></span> reading through what you said...</div>
+  `;
+
+  const modeLabel = {
+    presentation: "a short presentation or talk",
+    conversation: "a casual conversational fluency exercise",
+    interview: "an interview practice answer"
+  }[currentMode];
+
+  const userMsg = `You are a warm, specific speaking coach. Someone just recorded themselves doing ${modeLabel} in response to this prompt: "${currentPrompt}"
+
+Here is what they said (auto-transcribed, may contain minor recognition errors):
+"""
+${finalTranscript.trim()}
+"""
+
+Stats: duration ${lastStats.duration}, ${lastStats.words} words, ${lastStats.wpm} words per minute, ${lastStats.fillers} filler words (${lastStats.fillerRate}% of words).
+
+Give short, specific, encouraging feedback in under 180 words: 1) what worked well, referencing something specific they actually said, 2) one or two concrete things to improve next time, 3) a brief note on pacing or filler words only if the numbers genuinely suggest it's worth mentioning. Write in plain prose, no headers or bullet lists, warm but honest. Respond in the same language the transcript is written in.`;
+
+  try{
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": key,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-5",
+        max_tokens: 500,
+        messages: [{ role: "user", content: userMsg }]
+      })
+    });
+
+    if(!resp.ok){
+      let detail = "";
+      try{ detail = (await resp.json()).error?.message || ""; } catch(e){}
+      if(resp.status === 401){
+        zone.innerHTML = `
+          <div class="field-label">ai feedback</div>
+          <div class="notice error">That API key was rejected (401). Double-check it, or generate a new one.</div>
+          <button class="change-key" onclick="clearApiKey()">change API key</button>
+        `;
+      } else {
+        zone.innerHTML = `
+          <div class="field-label">ai feedback</div>
+          <div class="notice error">Something went wrong requesting feedback (${resp.status}). ${detail}</div>
+          <div class="actions"><button class="ghost" onclick="requestFeedback()">Try again</button></div>
+        `;
+      }
+      return;
+    }
+
+    const data = await resp.json();
+    const text = (data.content || [])
+      .filter(b => b.type === "text")
+      .map(b => b.text)
+      .join("\n")
+      .trim();
+
+    zone.innerHTML = `
+      <div class="field-label">ai feedback</div>
+      <div class="feedback-text">${text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n\n/g,"<br><br>")}</div>
+      <button class="change-key" onclick="clearApiKey()">change API key</button>
+    `;
+  } catch(err){
+    zone.innerHTML = `
+      <div class="field-label">ai feedback</div>
+      <div class="notice error">Couldn't reach the API — check your internet connection and try again.</div>
+      <div class="actions"><button class="ghost" onclick="requestFeedback()">Try again</button></div>
+    `;
+  }
+}
+
+function saveSpeakingSession(){
+  const words = (finalTranscript.trim().match(/\S+/g) || []).length;
+  const fillers = countFillers(finalTranscript);
+  const minutes = Math.max(elapsedSeconds / 60, 1/60);
+  const wpm = Math.round(words / minutes);
+  let detail = "Prompt: " + currentPrompt + "\n\n";
+  detail += "Duration: " + formatTime(elapsedSeconds) + "\n";
+  if(recognitionSupported){
+    detail += "Words: " + words + " · WPM: " + wpm + " · Fillers: " + fillers + "\n\n";
+    detail += "Transcript:\n" + (finalTranscript.trim() || "(no speech captured)");
+  } else {
+    detail += "(Live transcript unavailable in this browser)";
+  }
+  sessions.unshift({
+    mode: currentMode, date: new Date().toISOString(),
+    headline: currentPrompt,
+    detail: detail
+  });
+  saveSessions(sessions);
+  renderLog();
+  clearSummary();
+  newPrompt();
+}
+
+/* ---------------- log ---------------- */
+
+function timeAgo(iso){
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
+}
+function renderLog(){
+  const list = document.getElementById("logList");
+  document.getElementById("logCount").textContent = sessions.length + (sessions.length===1 ? " session" : " sessions");
+  document.getElementById("stats").textContent = sessions.length + " logged";
+  if(sessions.length === 0){
+    list.innerHTML = '<div class="log-empty">No sessions yet — your first one will show up here.</div>';
+    return;
+  }
+  list.innerHTML = "";
+  sessions.forEach((s, idx) => {
+    const el = document.createElement("div");
+    el.className = "log-entry";
+    el.innerHTML = `
+      <div class="row1">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="tag ${s.mode}">${s.mode}</span>
+          <span class="date">${timeAgo(s.date)}</span>
+        </div>
+        <button class="del" onclick="deleteSession(event, ${idx})">remove</button>
+      </div>
+      <div class="headline">${s.headline}</div>
+      <div class="detail">${s.detail}</div>
+    `;
+    el.addEventListener("click", (e) => {
+      if(e.target.classList.contains("del")) return;
+      el.dataset.expanded = el.dataset.expanded === "true" ? "false" : "true";
+    });
+    list.appendChild(el);
+  });
+}
+function deleteSession(e, idx){
+  e.stopPropagation();
+  sessions.splice(idx,1);
+  saveSessions(sessions);
+  renderLog();
+}
+
+/* ---------------- custom cursor: paper plane ---------------- */
+
+const canHover = window.matchMedia('(hover:hover)').matches;
+if(canHover){
+  const plane = document.getElementById('cursorPlane');
+  let px = window.innerWidth/2, py = window.innerHeight/2;
+  let mx = px, my = py;
+  let angle = 0, targetAngle = 0;
+
+  window.addEventListener('mousemove', (e) => {
+    mx = e.clientX; my = e.clientY;
+  });
+
+  function shortestAngleDelta(a, b){
+    let d = (b - a) % 360;
+    if(d > 180) d -= 360;
+    if(d < -180) d += 360;
+    return d;
+  }
+
+  function animateCursor(){
+    requestAnimationFrame(animateCursor);
+    const dx = mx - px, dy = my - py;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if(dist > 1.2){
+      targetAngle = Math.atan2(dy, dx) * (180/Math.PI);
+    }
+    px += dx * 0.22;
+    py += dy * 0.22;
+    angle += shortestAngleDelta(angle, targetAngle) * 0.16;
+
+    plane.style.left = px + 'px';
+    plane.style.top = py + 'px';
+    plane.style.transform = `translate(-50%,-50%) rotate(${angle}deg)`;
+  }
+  animateCursor();
+
+  document.addEventListener('mouseover', (e) => {
+    if(e.target.closest('button, .log-entry, input, textarea, a')) plane.classList.add('hovering');
+  });
+  document.addEventListener('mouseout', (e) => {
+    if(e.target.closest('button, .log-entry, input, textarea, a')) plane.classList.remove('hovering');
+  });
+}
+
+/* ---------------- init ---------------- */
+
+if(!recognitionSupported){
+  showNotice("Live transcript and filler-word tracking need a Chrome-based browser. Recording and playback still work everywhere.");
+}
+newPrompt();
+renderLog();
+</script>
+
+</body>
+</html>
