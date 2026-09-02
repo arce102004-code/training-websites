@@ -1,0 +1,38 @@
+# Thinking Gym
+
+A single-page tool for training reasoning on purpose, instead of absorbing whatever an algorithm decided to feed you today.
+
+No accounts, no analytics, no feed. Just three exercises that get harder the more honestly you engage with them.
+
+## The three modes
+
+**Forced Synthesis** — Two unrelated concepts appear (pulled from a pool of 140+ spanning engineering, biology, economics, art, mythology, and more). You have a timer and a blank field to find the real bridge between them: a shared mechanism, a working analogy, a way one solves the other's problem. Not a pun — an actual connection.
+
+**Socratic Interrogator** — You bring a belief or claim you actually hold. The tool walks you through six categories of pressure, one at a time — clarification, hidden assumptions, evidence, opposing viewpoints, implications, and a final "why do you actually believe this" — each pulled from a rotating question bank so it doesn't feel scripted on repeat.
+
+**Reverse Engineering Lab** — You're shown a real-world outcome (why aircraft engines get inspected the way they do, why octopuses have distributed nervous systems, why suspension bridges are built to sway) and have to reconstruct the constraint or pressure that produced it, before the actual explanation is revealed.
+
+Every session — whichever mode — gets saved to a local session log so you can look back at what you've worked through.
+
+## Running it
+
+This is a single static HTML file. No build step, no dependencies to install.
+
+- **Locally:** download `index.html` and open it in any browser.
+- **Hosted:** enable GitHub Pages on this repo (Settings → Pages → deploy from the branch this file lives in) and it'll be live at `https://<your-username>.github.io/<repo-name>/thinking-gym/`.
+
+## Tech
+
+Vanilla HTML/CSS/JS — no framework, no build tooling. Fonts are Playfair Display and Outfit, loaded from Google Fonts.
+
+## Data & privacy
+
+Everything you write stays in your own browser's `localStorage`. Nothing is sent to a server, because there is no server. Clearing your browser's site data for this page will clear your session log — there's no cloud backup.
+
+## Browser support
+
+Works in any modern browser. Motion (the floating background, cursor, animations) respects `prefers-reduced-motion` and scales down on smaller screens.
+
+## License
+
+MIT — use it, fork it, adapt the exercises to whatever you're trying to get better at.
