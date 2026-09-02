@@ -1,0 +1,50 @@
+# Speaking Gym
+
+A single-page tool for practicing speaking out loud — presentations, casual fluency, and interview answers — with a live transcript, filler-word tracking, and a recording you can actually listen back to.
+
+Built as a sibling to [Thinking Gym](../thinking-gym): same visual language, different muscle.
+
+## The three modes
+
+**Presentation** — a 3-minute prompt to give a short talk or pitch on the spot.
+
+**Conversation** — 90-second casual prompts aimed at spoken fluency, not polish.
+
+**Interview** — 2-minute classic behavioral interview questions, answered live.
+
+## How a session works
+
+1. Pick a mode and hit **Start speaking**.
+2. Your mic starts recording, and (in supported browsers) your words appear live in a transcript, with filler words — um, uh, like, you know, sort of, basically, actually, and a few others — highlighted as they show up.
+3. Live stats track word count, words per minute, and filler count as you talk.
+4. Hit **Stop**, and you get a summary: duration, WPM, filler count and rate, plus an audio player to review the actual recording.
+5. Save it, and it's added to a session log at the bottom, so you can track sessions over time.
+
+## Running it
+
+Single static HTML file, no build step.
+
+- **Locally:** download `index.html` and open it in a browser.
+- **Hosted:** enable GitHub Pages on this repo and it'll be live at `https://<your-username>.github.io/<repo-name>/speaking-gym/`.
+
+Microphone access requires a secure context — this works fine over GitHub Pages (HTTPS) or `localhost`. Some browsers restrict mic access when opening a file directly from disk (`file://`); if the mic prompt never appears, try hosting it rather than double-clicking the file.
+
+## Browser support — please read
+
+- **Live transcript and filler-word tracking require a Chrome-based browser** (Chrome, Edge, Brave, Arc). They rely on the Web Speech API, which Firefox and Safari don't support.
+- In unsupported browsers, recording and playback still work — you just won't get the live transcript, word count, or filler stats.
+- Speech recognition language is set to English (`en-US`).
+
+## Data & privacy
+
+Transcripts, stats, and your session log are stored only in your browser's `localStorage`. Audio recordings exist only in memory for the current session (for playback) and are not saved to disk or persisted across page reloads — save the parts you want to keep before closing the tab.
+
+Nothing is sent to a server for the core tool, because there is no server.
+
+## Tech
+
+Vanilla HTML/CSS/JS. Web Speech API for live transcription, MediaRecorder API for audio capture, Web Audio API for the soft timer chimes. Fonts are Playfair Display and Outfit, loaded from Google Fonts.
+
+## License
+
+MIT — use it, fork it, adapt the prompt banks to whatever you're practicing for.
