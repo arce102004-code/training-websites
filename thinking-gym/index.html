@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thinking Gym</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cloud:#F5F7F6;
+    --mist:#EBEFEE;
+    --ink:#2B3440;
+    --ink-soft:#6B7580;
+    --teal:#7FA8A3;
+    --teal-dim:rgba(127,168,163,0.14);
+    --champagne:#C9A66B;
+    --champagne-dim:rgba(201,166,107,0.16);
+    --blush:#EAC9CE;
+    --blush-deep:#C98A96;
+    --blush-dim:rgba(201,138,150,0.16);
+
+    --accent: var(--teal);
+    --accent-dim: var(--teal-dim);
+    --accent-rgb: 127,168,163;
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  html,body{ min-height:100%; background:var(--cloud); }
+  body{
+    font-family:'Outfit', sans-serif; font-weight:300;
+    color:var(--ink);
+    cursor:none;
+    overflow-x:hidden;
+    position:relative; z-index:0;
+    transition:background 0.6s ease;
+  }
+  @media (hover:none){ body{ cursor:auto; } .cursor-plane{ display:none; } }
+  ::selection{ background:var(--blush); color:var(--ink); }
+
+  :focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:2px; }
+
+  h1,h2,h3{ font-family:'Playfair Display', serif; font-weight:500; }
+
+  a{ cursor:none; }
+
+  /* ---------- custom cursor: paper plane ---------- */
+  .cursor-plane{
+    position:fixed; top:0; left:0; width:30px; height:30px;
+    pointer-events:none; z-index:9999;
+    transform:translate(-50%,-50%);
+    filter:drop-shadow(0 3px 8px rgba(43,52,64,0.18));
+    transition:filter 0.3s ease;
+  }
+  .cursor-plane svg{ width:100%; height:100%; display:block; transition:transform 0.25s ease; }
+  .cursor-plane .plane-body{ fill:var(--accent); transition:fill 0.4s ease; }
+  .cursor-plane .plane-fold{ stroke:rgba(255,255,255,0.65); stroke-width:1; stroke-linecap:round; fill:none; }
+  .cursor-plane.hovering{ filter:drop-shadow(0 5px 14px var(--accent-dim)); }
+  .cursor-plane.hovering svg{ transform:scale(1.18); }
+
+  /* ---------- ambient moving background — two-layer depth, ported from index.html ----------
+     Layer 1: a soft diffuse color wash (blurred, no border, no glass) sitting deep behind everything.
+     Layer 2: crisp glassmorphic spheres in front of it — their backdrop-blur is what frosts/refracts
+     the wash into that "looking through glass at soft light" depth. Without layer 1, layer 2 has
+     nothing colorful behind it to frost, which is why the first pass looked flat. */
+
+  .ambient-wash{ position:fixed; inset:0; z-index:-3; pointer-events:none; overflow:hidden; }
+  .ambient-wash span{ position:absolute; border-radius:50%; filter:blur(60px); }
+  .wash-1{ width:420px; height:420px; background:var(--blush); top:-10%; left:6%; opacity:0.42; animation:washA 24s ease-in-out infinite; }
+  .wash-2{ width:360px; height:360px; background:var(--teal); top:55%; right:2%; opacity:0.28; animation:washB 28s ease-in-out infinite; }
+  .wash-3{ width:300px; height:300px; background:var(--champagne); top:22%; right:26%; opacity:0.24; animation:washC 20s ease-in-out infinite; }
+  .wash-4{ width:340px; height:340px; background:var(--blush); bottom:-12%; right:12%; opacity:0.4; animation:washD 26s ease-in-out infinite; }
+  .wash-5{ width:260px; height:260px; background:var(--teal); bottom:8%; left:14%; opacity:0.28; animation:washE 22s ease-in-out infinite; }
+  @keyframes washA{ 0%,100%{ transform:translate(0,0); } 50%{ transform:translate(50px,40px); } }
+  @keyframes washB{ 0%,100%{ transform:translate(0,0); } 50%{ transform:translate(-40px,-35px); } }
+  @keyframes washC{ 0%,100%{ transform:translate(0,0); } 50%{ transform:translate(-28px,32px); } }
+  @keyframes washD{ 0%,100%{ transform:translate(0,0); } 50%{ transform:translate(-45px,-30px); } }
+  @keyframes washE{ 0%,100%{ transform:translate(0,0); } 50%{ transform:translate(32px,-28px); } }
+  @media (prefers-reduced-motion: reduce){
+    .ambient-wash span{ animation:none; }
+  }
+
+  .ambient-orbs{ position:fixed; inset:0; z-index:-2; pointer-events:none; overflow:hidden; }
+  .ambient-orbs .orb{
+    position:absolute; border-radius:50%;
+    backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px);
+    border:1px solid rgba(255,255,255,0.7);
+    box-shadow:
+      inset -16px -18px 30px rgba(43,52,64,0.10),
+      inset 14px 16px 24px rgba(255,255,255,0.65),
+      0 26px 48px rgba(43,52,64,0.10);
+    animation-timing-function:ease-in-out; animation-iteration-count:infinite;
+  }
+  .ambient-orbs .orb::after{
+    content:"";
+    position:absolute; top:16%; left:22%;
+    width:24%; height:18%; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,255,255,0.95), rgba(255,255,255,0) 70%);
+    filter:blur(1px);
+  }
+  .orb-a{ width:380px; height:380px; top:-9%; right:3%; opacity:0.5;
+    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,0.9), rgba(234,201,206,0.32) 60%, transparent 78%);
+    animation-name:floatA; animation-duration:19s; }
+  .orb-b{ width:300px; height:300px; bottom:-10%; left:4%; opacity:0.4;
+    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,0.88), rgba(127,168,163,0.3) 60%, transparent 78%);
+    animation-name:floatB; animation-duration:23s; }
+  .orb-c{ width:190px; height:190px; top:36%; right:20%; opacity:0.35;
+    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,0.9), rgba(201,166,107,0.28) 60%, transparent 78%);
+    animation-name:floatC; animation-duration:17s; }
+  .orb-d{ width:230px; height:230px; top:12%; left:8%; opacity:0.4;
+    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,0.88), rgba(127,168,163,0.26) 60%, transparent 78%);
+    animation-name:floatD; animation-duration:25s; }
+  .orb-e{ width:260px; height:260px; bottom:6%; right:-6%; opacity:0.45;
+    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,0.9), rgba(234,201,206,0.3) 60%, transparent 78%);
+    animation-name:floatE; animation-duration:21s; }
+  .orb-f{ width:150px; height:150px; bottom:32%; left:16%; opacity:0.3;
+    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,0.9), rgba(201,166,107,0.26) 60%, transparent 78%);
+    animation-name:floatF; animation-duration:15s; }
+
+  @keyframes floatA{ 0%,100%{ transform:translate(0,0) scale(1); } 50%{ transform:translate(-30px,40px) scale(1.06); } }
+  @keyframes floatB{ 0%,100%{ transform:translate(0,0) scale(1); } 50%{ transform:translate(35px,-30px) scale(1.05); } }
+  @keyframes floatC{ 0%,100%{ transform:translate(0,0) scale(1); } 50%{ transform:translate(-22px,-34px) scale(1.08); } }
+  @keyframes floatD{ 0%,100%{ transform:translate(0,0) scale(1); } 50%{ transform:translate(28px,26px) scale(1.05); } }
+  @keyframes floatE{ 0%,100%{ transform:translate(0,0) scale(1); } 50%{ transform:translate(-34px,-22px) scale(1.06); } }
+  @keyframes floatF{ 0%,100%{ transform:translate(0,0) scale(1); } 50%{ transform:translate(24px,-30px) scale(1.07); } }
+
+  @media (prefers-reduced-motion: reduce){
+    .ambient-orbs .orb{ animation:none; }
+  }
+
+  /* ---------- sound toggle ---------- */
+  .sound-toggle{
+    display:flex; align-items:center; justify-content:center;
+    width:34px; height:34px; padding:0; border-radius:50%;
+    border:1px solid rgba(43,52,64,0.12); background:rgba(255,255,255,0.5);
+    color:var(--ink-soft); cursor:none;
+    transition:border-color 0.3s ease, color 0.3s ease, background 0.3s ease;
+  }
+  .sound-toggle:hover{ background:var(--accent); color:#fff; border-color:var(--accent); transform:none; box-shadow:none; }
+  .sound-toggle svg{ width:16px; height:16px; }
+  .sound-toggle path{ fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+  .sound-toggle .bar{ fill:currentColor; stroke:none; }
+
+  /* ---------- layout ---------- */
+
+  .wrap{ max-width:840px; margin:0 auto; padding:120px 24px 100px; }
+
+  .glass-nav{
+    position:fixed; top:22px; left:50%; transform:translateX(-50%); z-index:100;
+    display:flex; align-items:center; gap:1.8rem;
+    padding:0.65rem 0.65rem 0.65rem 1.5rem; border-radius:999px;
+    background:rgba(255,255,255,0.55);
+    backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%);
+    border:1px solid rgba(255,255,255,0.8);
+    box-shadow:0 8px 32px rgba(43,52,64,0.08);
+  }
+  .glass-nav .logo{ font-family:'Playfair Display', serif; font-weight:600; font-size:1.02rem; letter-spacing:0.01em; white-space:nowrap; }
+  .glass-nav .logo em{ font-style:italic; color:var(--accent); transition:color 0.5s ease; }
+
+  .mode-tabs{ display:flex; gap:0.3rem; background:var(--mist); border-radius:999px; padding:0.3rem; }
+  .mode-tab{
+    font-family:'Outfit', sans-serif; font-size:0.78rem; font-weight:500;
+    letter-spacing:0.02em; color:var(--ink-soft);
+    background:transparent; border:none; border-radius:999px;
+    padding:0.5rem 1.05rem; cursor:none;
+    transition:background 0.3s ease, color 0.3s ease;
+  }
+  .mode-tab:hover{ color:var(--ink); }
+  .mode-tab[data-active="true"]{ background:#fff; color:var(--tab-color); box-shadow:0 2px 10px rgba(43,52,64,0.08); }
+  .mode-tab[data-mode="synthesis"]{ --tab-color: var(--teal); }
+  .mode-tab[data-mode="socratic"]{ --tab-color: var(--blush-deep); }
+  .mode-tab[data-mode="reverse"]{ --tab-color: var(--champagne); }
+
+  .stats-pill{ font-size:0.72rem; color:var(--ink-soft); white-space:nowrap; padding-right:0.4rem; }
+
+  @media (max-width:720px){
+    .glass-nav{ flex-direction:column; gap:0.7rem; padding:0.9rem; width:min(92vw,360px); }
+    .stats-pill{ display:none; }
+  }
+
+  /* ---------- session panels ---------- */
+
+  .session-panel{ display:none; }
+  .session-panel[data-open="true"]{ display:block; animation:rise 0.5s cubic-bezier(.2,.7,.2,1) both; }
+  @keyframes rise{ from{ opacity:0; transform:translateY(14px);} to{ opacity:1; transform:translateY(0);} }
+  @media (prefers-reduced-motion: reduce){ .session-panel[data-open="true"]{ animation:none; } }
+
+  .eyebrow{ font-size:0.76rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--accent); margin-bottom:0.9rem; font-weight:500; transition:color 0.5s ease; }
+  .session-title{ font-size:clamp(1.5rem,3.4vw,2.05rem); line-height:1.32; max-width:34ch; margin-bottom:2.2rem; color:var(--ink); }
+
+  .glass-card{
+    background:rgba(255,255,255,0.72);
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    border:1px solid rgba(255,255,255,0.9);
+    border-radius:22px;
+    box-shadow:0 18px 46px rgba(43,52,64,0.07);
+    padding:2.4rem 1.8rem 2rem;
+    margin-bottom:1.8rem;
+  }
+
+  textarea, input[type=text]{
+    width:100%;
+    background:rgba(255,255,255,0.75);
+    border:1px solid rgba(43,52,64,0.1);
+    border-radius:14px;
+    color:var(--ink);
+    font-family:'Outfit', sans-serif; font-weight:300;
+    font-size:1rem;
+    line-height:1.6;
+    padding:0.95rem 1.1rem;
+    resize:vertical;
+    transition:border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  textarea:focus, input:focus{ border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-dim); outline:none; }
+  textarea::placeholder, input::placeholder{ color:var(--ink-soft); opacity:0.75; }
+
+  .field-label{ font-size:0.74rem; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:0.6rem; font-weight:500; }
+
+  button{
+    font-family:'Outfit', sans-serif; font-size:0.85rem; font-weight:500;
+    letter-spacing:0.01em;
+    background:transparent;
+    color:var(--accent);
+    border:1px solid var(--accent);
+    border-radius:999px;
+    padding:0.75rem 1.5rem;
+    cursor:none;
+    transition:background 0.3s ease, color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  button:hover{ background:var(--accent); color:#fff; transform:translateY(-2px); box-shadow:0 10px 26px var(--accent-dim); }
+  button.primary{ background:var(--accent); color:#fff; }
+  button.primary:hover{ filter:brightness(1.06); }
+  button.ghost{ border-color:rgba(43,52,64,0.16); color:var(--ink-soft); }
+  button.ghost:hover{ background:rgba(43,52,64,0.06); color:var(--ink); box-shadow:none; }
+  button:disabled{ opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
+
+  .actions{ display:flex; gap:0.7rem; flex-wrap:wrap; margin-top:0.4rem; }
+
+  /* ---------- synthesis ---------- */
+
+  .node-pair{ display:flex; align-items:center; justify-content:center; gap:0; }
+  .node{
+    flex:1; max-width:230px; text-align:center;
+    padding:1.15rem 1.1rem;
+    border:1px solid rgba(127,168,163,0.4);
+    border-radius:16px;
+    background:rgba(255,255,255,0.85);
+    font-family:'Playfair Display', serif; font-size:1.08rem; line-height:1.35;
+    box-shadow:0 8px 22px rgba(127,168,163,0.14);
+  }
+  .signal{ flex:0 0 auto; width:110px; height:44px; position:relative; }
+  .signal svg{ position:absolute; inset:0; overflow:visible; }
+  .signal path{
+    fill:none; stroke:var(--teal); stroke-width:2; stroke-linecap:round;
+    stroke-dasharray:6 8;
+    animation:flow 1.6s linear infinite;
+  }
+  @keyframes flow{ to{ stroke-dashoffset:-28; } }
+  @media (prefers-reduced-motion: reduce){ .signal path{ animation:none; } }
+
+  .timer-row{ display:flex; align-items:center; justify-content:center; gap:1rem; margin-top:1.8rem; }
+  .timer-display{ font-family:'Outfit', sans-serif; font-weight:500; font-size:1.15rem; color:var(--ink-soft); min-width:60px; text-align:center; }
+
+  /* ---------- socratic ---------- */
+
+  .claim-input-row{ display:flex; gap:0.7rem; margin-bottom:2rem; flex-wrap:wrap; }
+  .claim-input-row input{ flex:1; min-width:220px; }
+
+  #claimDisplay{ text-align:left; }
+  #claimDisplay .field-label{ margin-bottom:0.4rem; }
+  #claimText{ font-family:'Playfair Display', serif; font-style:italic; font-size:1.25rem; color:var(--ink); }
+
+  .probe-chain{ display:flex; flex-direction:column; gap:0; }
+  .probe{
+    position:relative; padding:1.2rem 0 1.2rem 2.1rem;
+    border-left:1px solid rgba(201,138,150,0.35);
+    margin-left:0.5rem;
+  }
+  .probe:last-child{ border-left:1px solid transparent; }
+  .probe::before{
+    content:""; position:absolute; left:-6.5px; top:1.55rem;
+    width:12px; height:12px; border-radius:50%;
+    background:#fff; border:2px solid var(--blush-deep);
+  }
+  .probe .cat{ font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--blush-deep); margin-bottom:0.5rem; font-weight:500; }
+  .probe .q{ font-family:'Playfair Display', serif; font-size:1.12rem; line-height:1.5; margin-bottom:0.9rem; max-width:52ch; color:var(--ink); }
+  .probe textarea{ min-height:70px; }
+
+  .next-probe-row{ margin-left:2.6rem; margin-top:0.4rem; }
+
+  /* ---------- reverse ---------- */
+
+  .outcome-card{
+    background:rgba(255,255,255,0.8);
+    border-left:4px solid var(--champagne);
+    border-radius:16px;
+    padding:1.6rem 1.7rem;
+    font-family:'Playfair Display', serif; font-size:1.15rem; line-height:1.55;
+    margin-bottom:1.4rem;
+    box-shadow:0 10px 26px rgba(201,166,107,0.14);
+  }
+  .reveal-card{
+    background:var(--champagne-dim);
+    border:1px dashed rgba(201,166,107,0.5);
+    border-radius:16px;
+    padding:1.4rem 1.6rem;
+    font-size:0.98rem; line-height:1.65; color:var(--ink);
+    margin-top:1.2rem;
+  }
+  .reveal-card .cat{ font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--champagne); margin-bottom:0.6rem; font-weight:500; }
+
+  /* ---------- log ---------- */
+
+  .log-section{ margin-top:4.5rem; padding-top:2.2rem; border-top:1px solid rgba(43,52,64,0.1); }
+  .log-header{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:1.2rem; }
+  .log-header h2{ font-size:1.25rem; }
+  .log-header .count{ font-size:0.75rem; color:var(--ink-soft); }
+  .log-empty{ color:var(--ink-soft); font-size:0.92rem; font-style:italic; }
+
+  .log-entry{
+    background:rgba(255,255,255,0.7);
+    border:1px solid rgba(43,52,64,0.07);
+    border-radius:16px;
+    padding:1.05rem 1.2rem;
+    margin-bottom:0.7rem;
+    cursor:none;
+    transition:box-shadow 0.3s ease, transform 0.3s ease;
+  }
+  .log-entry:hover{ box-shadow:0 10px 26px rgba(43,52,64,0.09); transform:translateY(-2px); }
+  .log-entry .row1{ display:flex; align-items:center; gap:0.7rem; justify-content:space-between; }
+  .log-entry .tag{ font-size:0.68rem; text-transform:uppercase; letter-spacing:0.06em; padding:0.22rem 0.65rem; border-radius:999px; font-weight:500; }
+  .log-entry .tag.synthesis{ color:var(--teal); background:var(--teal-dim); }
+  .log-entry .tag.socratic{ color:var(--blush-deep); background:var(--blush-dim); }
+  .log-entry .tag.reverse{ color:var(--champagne); background:var(--champagne-dim); }
+  .log-entry .date{ font-size:0.72rem; color:var(--ink-soft); }
+  .log-entry .headline{ font-size:0.95rem; margin-top:0.6rem; color:var(--ink); }
+  .log-entry .detail{ display:none; margin-top:0.8rem; padding-top:0.8rem; border-top:1px solid rgba(43,52,64,0.08); font-size:0.9rem; line-height:1.65; color:var(--ink-soft); white-space:pre-wrap; }
+  .log-entry[data-expanded="true"] .detail{ display:block; }
+  .log-entry .del{ font-size:0.68rem; color:var(--ink-soft); background:none; border:none; padding:0.15rem 0.3rem; text-transform:none; letter-spacing:0; }
+  .log-entry .del:hover{ color:var(--blush-deep); background:none; transform:none; box-shadow:none; }
+
+  @media (max-width:640px){
+    .node-pair{ flex-direction:column; gap:1.2rem; }
+    .signal{ width:2px; height:40px; }
+    .signal svg{ width:44px; height:100%; left:-21px; top:0; transform:rotate(90deg); }
+    .node{ max-width:none; width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor-plane" id="cursorPlane">
+  <svg viewBox="0 0 24 24">
+    <path class="plane-body" d="M22 12 L3 4 L9 12 L3 20 Z"/>
+    <path class="plane-fold" d="M9 12 L22 12"/>
+  </svg>
+</div>
+
+<div class="ambient-wash">
+  <span class="wash-1"></span>
+  <span class="wash-2"></span>
+  <span class="wash-3"></span>
+  <span class="wash-4"></span>
+  <span class="wash-5"></span>
+</div>
+
+<div class="ambient-orbs">
+  <span class="orb orb-a"></span>
+  <span class="orb orb-b"></span>
+  <span class="orb orb-c"></span>
+  <span class="orb orb-d"></span>
+  <span class="orb orb-e"></span>
+  <span class="orb orb-f"></span>
+</div>
+
+<nav class="glass-nav">
+  <div class="logo">Thinking <em>Gym</em></div>
+  <div class="mode-tabs">
+    <button class="mode-tab" data-mode="synthesis" data-active="true" onclick="setMode('synthesis')">Synthesis</button>
+    <button class="mode-tab" data-mode="socratic" onclick="setMode('socratic')">Socratic</button>
+    <button class="mode-tab" data-mode="reverse" onclick="setMode('reverse')">Reverse</button>
+  </div>
+  <button class="sound-toggle" id="soundToggle" aria-label="Toggle sound" title="Toggle sound">
+    <svg viewBox="0 0 24 24" id="soundIcon">
+      <path class="bar" d="M4 9v6h4l5 5V4L8 9H4z"/>
+      <path d="M16.2 8.8a5 5 0 0 1 0 6.4"/>
+      <path d="M18.6 6.4a8.5 8.5 0 0 1 0 11.2"/>
+    </svg>
+  </button>
+  <div class="stats-pill" id="stats"></div>
+</nav>
+
+<div class="wrap">
+
+  <!-- SYNTHESIS -->
+  <section class="session-panel" id="panel-synthesis" data-open="true">
+    <div class="eyebrow">Forced Synthesis</div>
+    <h1 class="session-title">Two unrelated ideas just landed on your desk. Find the real bridge between them — a mechanism, an analogy, a shared principle.</h1>
+
+    <div class="glass-card">
+      <div class="node-pair" id="nodePair">
+        <div class="node a" id="nodeA">—</div>
+        <div class="signal"><svg viewBox="0 0 110 44" preserveAspectRatio="none"><path d="M0,22 C 28,22 28,8 55,8 C 82,8 82,36 110,36" id="signalPath"/></svg></div>
+        <div class="node b" id="nodeB">—</div>
+      </div>
+      <div class="timer-row">
+        <button class="ghost" id="timerToggle" onclick="toggleTimer()">Start 8:00</button>
+        <div class="timer-display" id="timerDisplay">08:00</div>
+      </div>
+    </div>
+
+    <div class="field-label">the bridge</div>
+    <textarea id="synthesisInput" rows="6" placeholder="What connects these two? Is it a shared mechanism, a broken analogy that reveals something, a way one solves the other's problem..."></textarea>
+
+    <div class="actions">
+      <button class="ghost" onclick="newPair()">New pair</button>
+      <button class="primary" onclick="saveSynthesis()">Save session</button>
+    </div>
+  </section>
+
+  <!-- SOCRATIC -->
+  <section class="session-panel" id="panel-socratic">
+    <div class="eyebrow">Socratic Interrogator</div>
+    <h1 class="session-title">Bring something you actually believe. It gets harder to defend one question at a time — that's the point.</h1>
+
+    <div class="claim-input-row">
+      <input type="text" id="claimInput" placeholder="State a belief, claim, or opinion you hold...">
+      <button class="primary" onclick="beginInterrogation()">Begin</button>
+    </div>
+
+    <div id="claimDisplay" class="glass-card" style="display:none;">
+      <div class="field-label">under interrogation</div>
+      <div id="claimText"></div>
+    </div>
+
+    <div class="probe-chain" id="probeChain"></div>
+    <div class="next-probe-row" id="nextProbeRow" style="display:none;">
+      <button class="primary" onclick="nextProbe()">Next question</button>
+    </div>
+    <div class="actions" id="socraticFinish" style="display:none; margin-left:2.6rem;">
+      <button class="primary" onclick="saveSocratic()">Save session</button>
+      <button class="ghost" onclick="resetSocratic()">Start over</button>
+    </div>
+  </section>
+
+  <!-- REVERSE -->
+  <section class="session-panel" id="panel-reverse">
+    <div class="eyebrow">Reverse Engineering Lab</div>
+    <h1 class="session-title">Here's the outcome. Before you see why, work out the problem or pressure that most plausibly produced it.</h1>
+
+    <div class="outcome-card" id="reverseOutcome">—</div>
+
+    <div class="field-label">your reconstruction</div>
+    <textarea id="reverseInput" rows="5" placeholder="What problem, constraint, or incentive would make this the sensible outcome?"></textarea>
+
+    <div class="actions">
+      <button class="ghost" onclick="revealReverse()">Reveal</button>
+    </div>
+
+    <div class="reveal-card" id="reverseReveal" style="display:none;">
+      <div class="cat">what actually explains it</div>
+      <div id="reverseRevealText"></div>
+    </div>
+
+    <div class="actions" id="reverseFinish" style="display:none;">
+      <button class="primary" onclick="saveReverse()">Save &amp; next case</button>
+    </div>
+  </section>
+
+  <section class="log-section">
+    <div class="log-header">
+      <h2>Session Log</h2>
+      <div class="count" id="logCount">0 sessions</div>
+    </div>
+    <div id="logList"></div>
+  </section>
+
+</div>
+
+<script>
+/* ---------------- content pools ---------------- */
+
+const SYNTHESIS_CONCEPTS = [
+  "turbofan degradation curves","digital twins","sensor fusion","control feedback loops",
+  "predictive maintenance","remaining useful life estimation","structural fatigue",
+  "black box flight recorders","redundancy in fault-tolerant systems","attention mechanisms",
+  "overfitting","reward shaping in reinforcement learning","uncertainty quantification",
+  "hybrid physics + ML modeling","PID controllers","circuit resonance",
+  "embedded systems power budgets","immune system memory","coral reef symbiosis",
+  "cellular apoptosis","migratory bird navigation","insect metamorphosis","homeostasis",
+  "the sunk cost fallacy","market herd behavior","the supply chain bullwhip effect",
+  "inflation expectations","auction theory","negative space in composition","chiaroscuro",
+  "improvisational jazz","architectural load paths","typographic rhythm","the Trojan horse",
+  "the tragedy of the commons","guild apprenticeship systems","oral tradition storytelling",
+  "erosion patterns","tectonic plate drift","river deltas","glacial retreat",
+  "urban traffic congestion","herd immunity","language drift","fashion cycles",
+  "meme propagation","fermentation","mise en place","flavor pairing","sous-vide precision",
+  "marginal gains in cycling","momentum in team sports","muscle memory","chess endgames",
+  "compound interest","the observer effect","self-fulfilling prophecies","swarm intelligence",
+  "the butterfly effect","apprenticeship vs. credentialism","antifragility","tidal locking",
+  "the placebo effect","open-source maintainership","calibration in forecasting",
+  "gain scheduling in adaptive control","Kalman filtering","fatigue crack propagation",
+  "redundant sensor voting","model interpretability","transfer learning",
+  "edge computing constraints","thermal derating","vibration signature analysis",
+  "fail-operational systems","control system gain margins","digital twin drift",
+  "mycorrhizal fungal networks","bioluminescence","hibernation metabolism",
+  "gut microbiome symbiosis","phototropism","camouflage evolution",
+  "ant colony foraging","circadian rhythms","creative destruction","network effects",
+  "moral hazard","price discrimination","the paradox of thrift","comparative advantage",
+  "the rule of thirds","kintsugi","minimalism vs. maximalism","call and response in music",
+  "counterpoint","the uncanny valley","Bauhaus functionalism","the myth of Icarus",
+  "the printing press's social impact","Silk Road trade networks","cargo cults",
+  "the Rosetta Stone as a translation key","watershed drainage basins","volcanic dormancy cycles",
+  "desert varnish formation","permafrost thaw feedback","gentrification cycles",
+  "the bystander effect","information cascades","Dunbar's number","urban heat islands",
+  "open-source maintainer burnout","knife sharpening angles","espresso extraction",
+  "bread proofing","tailoring darts and seams","woodworking joinery","calligraphy stroke order",
+  "Occam's razor","the Dunning-Kruger effect","opportunity cost","the halting problem",
+  "entropy","the Pareto principle","black swan events","the map-territory relation",
+  "Goodhart's law","the Ship of Theseus","time dilation","chaos theory's sensitive dependence",
+  "prime number distribution","fractal self-similarity","quantum superposition",
+  "the three-body problem","Brownian motion","metaphor as cognitive scaffolding",
+  "working memory limits","the Sapir-Whorf hypothesis","confirmation bias",
+  "cognitive load theory","the spacing effect in learning"
+];
+
+const REVERSE_CASES = [
+  { outcome:"Commercial aircraft engines have their fan blades inspected far more often than the low-pressure turbine stages buried deep inside.",
+    reveal:"Fan blades face the highest risk of foreign object damage — bird strikes, ice, debris — and sit at the most accessible point for cheap, frequent visual inspection. The buried LPT stages are shielded by upstream stages and expensive to access directly, so they're monitored indirectly through vibration and temperature trends instead of physical teardown." },
+  { outcome:"Octopuses have most of their neurons distributed in their arms rather than centralized in a brain.",
+    reveal:"With no rigid skeleton, an octopus must coordinate eight independently deformable limbs in real time. Centralizing control would force every local decision through a round trip to the brain — distributing processing to each arm lets it react to a threat or texture locally, without waiting." },
+  { outcome:"Streaming platforms added a short countdown before the next episode autoplays, and later many users specifically asked for a way to turn it off.",
+    reveal:"Autoplay removes the natural decision point where someone might choose to stop, which maximizes total watch time. The option to disable it exists mainly to reduce backlash and signal user control, without materially changing what the default does to most people." },
+  { outcome:"Many Gothic cathedrals have flying buttresses on the exterior instead of thicker interior walls.",
+    reveal:"A roof's outward thrust normally has to be absorbed by thick, windowless interior walls. Moving that structural job outside, as buttresses, let architects keep the interior walls thin and open them up with enormous stained-glass windows — the load path was redirected, not eliminated." },
+  { outcome:"Public health campaigns aim for vaccination coverage well above what any single person needs for their own protection.",
+    reveal:"Herd immunity depends on breaking chains of transmission across the whole population, not on any one person's odds. Campaigns overshoot the individual threshold to build a buffer against unvaccinated clusters, imported cases, and imperfect real-world efficacy." },
+  { outcome:"Many long suspension bridges are built with expansion joints and are engineered to sway several feet in strong wind.",
+    reveal:"A perfectly rigid structure accumulates stress from thermal expansion and wind load until it cracks. Letting the bridge sway and expand dissipates that energy elastically instead of forcing the material to resist it — trading the appearance of stiffness for a large gain in fatigue life." },
+  { outcome:"Many freemium software products make their free tier genuinely useful, not just a crippled demo.",
+    reveal:"A free tier that's too weak never builds habit or word-of-mouth. Companies tune it to be good enough to create real dependency and viral reach, while still withholding the specific things — limits, collaboration, storage — that convert power users into paying ones." },
+  { outcome:"Arctic terns fly a long zig-zagging migration route instead of a straight line between poles.",
+    reveal:"The shortest path in distance isn't the cheapest one in energy. The birds ride prevailing wind systems and avoid open-ocean stretches with no food, so the route that costs the least effort is longer on a map but shorter in the currency that actually matters to them." },
+  { outcome:"Formula 1 pit crews rehearse a tire change as a tightly choreographed routine, yet each person only performs one narrow task.",
+    reveal:"Splitting a two-second job into many single-responsibility roles removes decision-making from the critical path. Each person's task becomes pure muscle memory, and the coordination cost is paid once, in rehearsal, instead of being re-solved live during every stop." },
+  { outcome:"Some precision manufacturing floors are kept at nearly constant temperature and humidity, even when the process itself doesn't obviously need it.",
+    reveal:"Metal expands and contracts with temperature, and even micrometer-scale drift can push a precision part out of tolerance. Controlling the room compensates for material physics that would otherwise silently ruin accuracy with no visible cause on the line." },
+  { outcome:"Some low-cost airlines keep an aircraft flying tight loops all day instead of resting it overnight at a hub.",
+    reveal:"An aircraft only earns money in the air; idle time on the ground is pure cost with no revenue. The airline's margin depends on maximizing hours flown, even at the price of tighter turnarounds and less slack to absorb delays." },
+  { outcome:"Some code review cultures require a second person's approval even for a single-line change.",
+    reveal:"The risk isn't the size of the change, it's the chance of an assumption the author can't see because they made it. A second reviewer catches exactly that blind spot precisely because they don't share the author's context — the rule optimizes for catching invisible errors, not for proportional effort." },
+  { outcome:"Coral reefs can bleach and die from a water temperature rise of just one or two degrees Celsius.",
+    reveal:"Coral depends on a symbiotic algae living in its tissue for food and color. Heat stress causes the coral to expel that algae as a survival reflex — but without it the coral starves. The reef isn't failing from heat directly, it's failing from the sudden loss of its energy source." },
+  { outcome:"Negotiation training often teaches making the first offer, even without knowing the other side's number.",
+    reveal:"The first number named tends to anchor the entire range in most people's minds, even when they consciously try to discount it. Going first lets you set that anchor deliberately instead of reacting to whatever anchor the other side sets for you." },
+  { outcome:"Elevator cars in many buildings have a mirror inside.",
+    reveal:"A mirror doesn't shorten the wait, but it gives people something to look at besides each other and the floor counter, which measurably reduces how long the wait feels. The fix targets perceived time, not actual time." },
+  { outcome:"Some warehouse robots deliberately take slightly inefficient paths instead of the shortest route between two points.",
+    reveal:"A fleet optimizing every robot for its own shortest path creates congestion where paths cross. Accepting a locally suboptimal route for each robot can produce a globally faster system, because it avoids gridlock at shared junctions." },
+  { outcome:"Many R&D labs allocate a fixed percentage of engineering time to projects with no defined deliverable.",
+    reveal:"Fully specified roadmaps only ever produce what was already imagined. Unstructured time increases the odds of discovering a problem, or a solution, nobody thought to schedule — the cost of the 'wasted' time is treated as the price of occasionally finding something roadmap planning can't." },
+  { outcome:"Wine glasses used for tasting are almost always clear, thin-walled, and narrower at the top than at the base.",
+    reveal:"The shape concentrates aroma compounds toward the nose before the first sip, clear glass isolates color as an independent signal of quality, and a thin wall minimizes how much the glass itself changes the wine's perceived temperature — every design choice removes a variable that would otherwise confound the taster's judgment." }
+];
+
+const SOCRATIC_BANK = {
+  clarify: [
+    "In your own words, what exactly do you mean by this? Try restating it more precisely than you first said it.",
+    "What's a concrete, specific example that shows this claim actually happening?",
+    "Is there a simpler way to say the same thing — and does anything important get lost if you simplify it that far?"
+  ],
+  assumptions: [
+    "What are you assuming has to be true for this to hold? Name one assumption you didn't state out loud.",
+    "If one of your unstated assumptions turned out to be false, would the claim survive, or collapse with it?",
+    "Is there a hidden 'always' or 'never' buried in this claim that might not actually be true?"
+  ],
+  evidence: [
+    "What's the strongest piece of evidence you have for this, and where did it actually come from?",
+    "What evidence, if you encountered it, would make you seriously doubt this?",
+    "Is your evidence a single memorable case, a pattern you've tracked, or a mechanism you understand — and does which one it is change how much you should trust it?"
+  ],
+  viewpoints: [
+    "Who would disagree with this, and what's the strongest version of their argument — steelman it, don't strawman it.",
+    "How would someone from a completely different field, culture, or background see this differently?",
+    "What does this claim look like from the perspective of someone it affects negatively?"
+  ],
+  implications: [
+    "If this is true, what follows from it that you haven't said out loud yet?",
+    "What would you have to actually do differently if you took this claim fully seriously?",
+    "Does this claim still hold at ten times the scale, or at a tenth of it — or does it quietly break somewhere in between?"
+  ],
+  meta: [
+    "Why do you believe this — because you reasoned your way to it, or because you inherited it from somewhere?",
+    "What would it actually take for you to change your mind on this?",
+    "A year from now, do you expect to still believe this exactly as stated? Why, or why not?"
+  ]
+};
+const SOCRATIC_ORDER = ["clarify","assumptions","evidence","viewpoints","implications","meta"];
+
+/* ---------------- shuffle-bag helpers ---------------- */
+
+function makeBag(items){
+  let bag = [];
+  return function next(){
+    if(bag.length === 0){ bag = [...items].sort(()=>Math.random()-0.5); }
+    return bag.pop();
+  };
+}
+const nextConceptSingle = makeBag(SYNTHESIS_CONCEPTS);
+const nextReverseCase = makeBag(REVERSE_CASES);
+
+function pickTwoConcepts(){
+  let a = nextConceptSingle();
+  let b = nextConceptSingle();
+  let guard = 0;
+  while(b === a && guard < 10){ b = nextConceptSingle(); guard++; }
+  return [a,b];
+}
+
+/* ---------------- state ---------------- */
+
+const STORAGE_KEY = "thinkingGymSessions";
+function loadSessions(){
+  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch(e){ return []; }
+}
+function saveSessions(list){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+let sessions = loadSessions();
+
+/* ---------------- mode switching ---------------- */
+
+const MODE_STYLE = {
+  synthesis: { accent:"var(--teal)", dim:"var(--teal-dim)", rgb:"127,168,163", dust:"140,185,180" },
+  socratic:  { accent:"var(--blush-deep)", dim:"var(--blush-dim)", rgb:"201,138,150", dust:"234,201,206" },
+  reverse:   { accent:"var(--champagne)", dim:"var(--champagne-dim)", rgb:"201,166,107", dust:"216,186,133" }
+};
+
+function setMode(mode){
+  document.querySelectorAll(".session-panel").forEach(p => p.dataset.open = "false");
+  document.getElementById("panel-"+mode).dataset.open = "true";
+  document.querySelectorAll(".mode-tab").forEach(b => b.dataset.active = (b.dataset.mode === mode) ? "true" : "false");
+  const style = MODE_STYLE[mode];
+  document.documentElement.style.setProperty("--accent", style.accent);
+  document.documentElement.style.setProperty("--accent-dim", style.dim);
+  document.documentElement.style.setProperty("--accent-rgb", style.rgb);
+}
+
+/* ---------------- audio ---------------- */
+
+let audioCtx = null;
+let soundEnabled = (localStorage.getItem("thinkingGymSound") !== "off");
+
+function getAudioCtx(){
+  if(!audioCtx){ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+  if(audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+function playTone(freq, startTime, duration, type, peakGain){
+  if(!soundEnabled) return;
+  const ctx = getAudioCtx();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type || "sine";
+  osc.frequency.value = freq;
+  const t0 = ctx.currentTime + startTime;
+  gain.gain.setValueAtTime(0, t0);
+  gain.gain.linearRampToValueAtTime(peakGain || 0.1, t0 + 0.04);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(t0);
+  osc.stop(t0 + duration + 0.05);
+}
+function playStartTone(){ playTone(660, 0, 0.3, "sine", 0.1); }
+function playTickTone(){ playTone(880, 0, 0.12, "sine", 0.06); }
+function playChimeTone(){
+  playTone(523.25, 0,    0.9, "sine", 0.14);
+  playTone(659.25, 0.12, 0.9, "sine", 0.12);
+  playTone(783.99, 0.24, 1.1, "sine", 0.10);
+}
+function updateSoundIcon(){
+  const btn = document.getElementById("soundToggle");
+  const waves = document.querySelectorAll("#soundIcon path:not(.bar)");
+  waves.forEach(w => w.style.display = soundEnabled ? "" : "none");
+  btn.style.opacity = soundEnabled ? "1" : "0.5";
+}
+document.getElementById("soundToggle").addEventListener("click", () => {
+  soundEnabled = !soundEnabled;
+  localStorage.setItem("thinkingGymSound", soundEnabled ? "on" : "off");
+  updateSoundIcon();
+  if(soundEnabled){ playTone(600, 0, 0.16, "sine", 0.08); }
+});
+updateSoundIcon();
+
+/* ---------------- synthesis mode ---------------- */
+
+let timerSeconds = 8*60;
+let timerRunning = false;
+let timerInterval = null;
+
+function formatTime(s){
+  const m = Math.floor(s/60).toString().padStart(2,"0");
+  const sec = (s%60).toString().padStart(2,"0");
+  return m+":"+sec;
+}
+function toggleTimer(){
+  if(timerRunning){
+    clearInterval(timerInterval); timerRunning = false;
+    document.getElementById("timerToggle").textContent = "Resume";
+  } else {
+    timerRunning = true;
+    document.getElementById("timerToggle").textContent = "Pause";
+    playStartTone();
+    timerInterval = setInterval(()=>{
+      if(timerSeconds > 0){
+        timerSeconds--;
+        document.getElementById("timerDisplay").textContent = formatTime(timerSeconds);
+        if(timerSeconds > 0 && timerSeconds <= 3){ playTickTone(); }
+        if(timerSeconds === 0){
+          clearInterval(timerInterval); timerRunning = false;
+          document.getElementById("timerToggle").textContent = "Time's up";
+          playChimeTone();
+        }
+      }
+    }, 1000);
+  }
+}
+function resetTimer(){
+  clearInterval(timerInterval); timerRunning = false; timerSeconds = 8*60;
+  document.getElementById("timerDisplay").textContent = formatTime(timerSeconds);
+  document.getElementById("timerToggle").textContent = "Start 8:00";
+}
+function newPair(){
+  const [a,b] = pickTwoConcepts();
+  document.getElementById("nodeA").textContent = a;
+  document.getElementById("nodeB").textContent = b;
+  document.getElementById("synthesisInput").value = "";
+  resetTimer();
+}
+function saveSynthesis(){
+  const text = document.getElementById("synthesisInput").value.trim();
+  if(!text){ document.getElementById("synthesisInput").focus(); return; }
+  const a = document.getElementById("nodeA").textContent;
+  const b = document.getElementById("nodeB").textContent;
+  sessions.unshift({
+    mode:"synthesis", date:new Date().toISOString(),
+    headline: a + "  ×  " + b,
+    detail: "Bridge:\n" + text
+  });
+  saveSessions(sessions); renderLog();
+  newPair();
+}
+
+/* ---------------- socratic mode ---------------- */
+
+let currentClaim = "";
+let probeStep = -1;
+let probeResponses = [];
+let currentProbeQuestions = [];
+
+function beginInterrogation(){
+  const claim = document.getElementById("claimInput").value.trim();
+  if(!claim) { document.getElementById("claimInput").focus(); return; }
+  currentClaim = claim;
+  probeStep = -1;
+  probeResponses = [];
+  currentProbeQuestions = SOCRATIC_ORDER.map(cat => {
+    const options = SOCRATIC_BANK[cat];
+    return { cat, q: options[Math.floor(Math.random()*options.length)] };
+  });
+  document.getElementById("claimDisplay").style.display = "block";
+  document.getElementById("claimText").textContent = "\u201C" + claim + "\u201D";
+  document.getElementById("probeChain").innerHTML = "";
+  document.getElementById("socraticFinish").style.display = "none";
+  nextProbe();
+}
+
+function nextProbe(){
+  if(probeStep >= 0){
+    const prevTa = document.getElementById("probeInput-"+probeStep);
+    probeResponses[probeStep] = prevTa ? prevTa.value.trim() : "";
+  }
+  probeStep++;
+  if(probeStep >= currentProbeQuestions.length){
+    document.getElementById("nextProbeRow").style.display = "none";
+    document.getElementById("socraticFinish").style.display = "flex";
+    return;
+  }
+  const { cat, q } = currentProbeQuestions[probeStep];
+  const chain = document.getElementById("probeChain");
+  const div = document.createElement("div");
+  div.className = "probe";
+  div.innerHTML = `
+    <div class="cat">${cat}</div>
+    <div class="q">${q}</div>
+    <textarea id="probeInput-${probeStep}" rows="3" placeholder="Your answer..."></textarea>
+  `;
+  chain.appendChild(div);
+  document.getElementById("nextProbeRow").style.display = "block";
+  div.querySelector("textarea").focus();
+}
+
+function saveSocratic(){
+  const lastTa = document.getElementById("probeInput-"+probeStep);
+  if(lastTa) probeResponses[probeStep] = lastTa.value.trim();
+  let detail = "Claim: " + currentClaim + "\n\n";
+  currentProbeQuestions.forEach((item, i) => {
+    detail += "[" + item.cat + "] " + item.q + "\n\u2192 " + (probeResponses[i] || "(no answer)") + "\n\n";
+  });
+  sessions.unshift({
+    mode:"socratic", date:new Date().toISOString(),
+    headline: currentClaim,
+    detail: detail.trim()
+  });
+  saveSessions(sessions); renderLog();
+  resetSocratic();
+}
+
+function resetSocratic(){
+  currentClaim = ""; probeStep = -1; probeResponses = []; currentProbeQuestions = [];
+  document.getElementById("claimInput").value = "";
+  document.getElementById("claimDisplay").style.display = "none";
+  document.getElementById("probeChain").innerHTML = "";
+  document.getElementById("nextProbeRow").style.display = "none";
+  document.getElementById("socraticFinish").style.display = "none";
+}
+
+/* ---------------- reverse mode ---------------- */
+
+let currentCase = null;
+
+function newReverseCase(){
+  currentCase = nextReverseCase();
+  document.getElementById("reverseOutcome").textContent = currentCase.outcome;
+  document.getElementById("reverseInput").value = "";
+  document.getElementById("reverseReveal").style.display = "none";
+  document.getElementById("reverseFinish").style.display = "none";
+}
+function revealReverse(){
+  document.getElementById("reverseRevealText").textContent = currentCase.reveal;
+  document.getElementById("reverseReveal").style.display = "block";
+  document.getElementById("reverseFinish").style.display = "flex";
+}
+function saveReverse(){
+  const text = document.getElementById("reverseInput").value.trim();
+  sessions.unshift({
+    mode:"reverse", date:new Date().toISOString(),
+    headline: currentCase.outcome,
+    detail: "Your reconstruction:\n" + (text || "(none written)") + "\n\nActual explanation:\n" + currentCase.reveal
+  });
+  saveSessions(sessions); renderLog();
+  newReverseCase();
+}
+
+/* ---------------- log ---------------- */
+
+function timeAgo(iso){
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
+}
+function renderLog(){
+  const list = document.getElementById("logList");
+  document.getElementById("logCount").textContent = sessions.length + (sessions.length===1 ? " session" : " sessions");
+  document.getElementById("stats").textContent = sessions.length + " logged";
+  if(sessions.length === 0){
+    list.innerHTML = '<div class="log-empty">No sessions yet — your first one will show up here.</div>';
+    return;
+  }
+  list.innerHTML = "";
+  sessions.forEach((s, idx) => {
+    const el = document.createElement("div");
+    el.className = "log-entry";
+    el.innerHTML = `
+      <div class="row1">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="tag ${s.mode}">${s.mode}</span>
+          <span class="date">${timeAgo(s.date)}</span>
+        </div>
+        <button class="del" onclick="deleteSession(event, ${idx})">remove</button>
+      </div>
+      <div class="headline">${s.headline}</div>
+      <div class="detail">${s.detail}</div>
+    `;
+    el.addEventListener("click", (e) => {
+      if(e.target.classList.contains("del")) return;
+      el.dataset.expanded = el.dataset.expanded === "true" ? "false" : "true";
+    });
+    list.appendChild(el);
+  });
+}
+function deleteSession(e, idx){
+  e.stopPropagation();
+  sessions.splice(idx,1);
+  saveSessions(sessions);
+  renderLog();
+}
+
+/* ---------------- custom cursor: paper plane ---------------- */
+
+const canHover = window.matchMedia('(hover:hover)').matches;
+if(canHover){
+  const plane = document.getElementById('cursorPlane');
+  let px = window.innerWidth/2, py = window.innerHeight/2;
+  let mx = px, my = py;
+  let angle = 0, targetAngle = 0;
+
+  window.addEventListener('mousemove', (e) => {
+    mx = e.clientX; my = e.clientY;
+  });
+
+  function shortestAngleDelta(a, b){
+    let d = (b - a) % 360;
+    if(d > 180) d -= 360;
+    if(d < -180) d += 360;
+    return d;
+  }
+
+  function animateCursor(){
+    requestAnimationFrame(animateCursor);
+    const dx = mx - px, dy = my - py;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if(dist > 1.2){
+      targetAngle = Math.atan2(dy, dx) * (180/Math.PI);
+    }
+    px += dx * 0.22;
+    py += dy * 0.22;
+    angle += shortestAngleDelta(angle, targetAngle) * 0.16;
+
+    plane.style.left = px + 'px';
+    plane.style.top = py + 'px';
+    plane.style.transform = `translate(-50%,-50%) rotate(${angle}deg)`;
+  }
+  animateCursor();
+
+  document.querySelectorAll('button, .log-entry, input, textarea, a').forEach(el => {
+    el.addEventListener('mouseenter', () => plane.classList.add('hovering'));
+    el.addEventListener('mouseleave', () => plane.classList.remove('hovering'));
+  });
+}
+
+
+/* ---------------- init ---------------- */
+
+newPair();
+newReverseCase();
+renderLog();
+</script>
+
+
+</body>
+</html>
